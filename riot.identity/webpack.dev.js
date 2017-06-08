@@ -6,7 +6,7 @@ module.exports = {
   devtool: 'source-map',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist')
+    path: path.resolve(__dirname, '../src/TheWebApp/wwwroot/dist')
   },
   externals: {
     $: 'jQuery',

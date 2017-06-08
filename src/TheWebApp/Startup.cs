@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Serialization;
 using TheWebApp.Data;
 using TheWebApp.Models;
 using TheWebApp.Services;
@@ -46,8 +47,16 @@ namespace TheWebApp
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+            services.AddAntiforgery(opts => opts.HeaderName = "X-XSRF-Token");
+            services.AddMvc(opts =>
+            {
+                opts.Filters.AddService(typeof(AngularAntiforgeryCookieResultFilter));
+            }).AddJsonOptions(options =>
+            {
+                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
 
-            services.AddMvc();
+            });
+            services.AddTransient<AngularAntiforgeryCookieResultFilter>();
 
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();

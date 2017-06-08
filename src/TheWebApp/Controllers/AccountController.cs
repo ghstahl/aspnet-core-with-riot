@@ -53,6 +53,19 @@ namespace TheWebApp.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
+        //
+        // POST: /Account/Login
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> LoginJson([FromBody]LoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                
+            }
+            return Json("test");
+        }
 
         //
         // POST: /Account/Login

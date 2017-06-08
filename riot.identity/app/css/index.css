@@ -4,7 +4,6 @@
 
 /* Move down content because we have a fixed navbar that is 50px tall */
 body {
-  padding-top: 70px;
 }
  a:hover {
   cursor:pointer;
@@ -37,25 +36,14 @@ body {
   }
 }
 */
-  .sidebar {
-    position: absolute;
-    top: 51px;
-    bottom: 0;
-    left: 0;
-    z-index: 1000;
-    display: block;
-    padding: 20px;
-    overflow-x: hidden;
-    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-    width: 200px;
-    height: 100%;
-    border-right: 1px solid #eee;
-  }
+  
  
 #mainContent {
-  float: left;
-     
-    margin-left: 200px;
+
+ 
+  float: left;   
+  margin-left: 200px;
+  height: 100%;
 }
 
 /*
@@ -64,7 +52,7 @@ body {
 
 .main {
   padding-right: 20px;
-    padding-left: 20px;
+  padding-left: 20px;
 }
 @media (min-width: 768px) {
   .main {
@@ -74,12 +62,6 @@ body {
 }
 .main .page-header {
   margin-top: 0;
-}
-
-
-body {
-    padding-top: 70px;
-    padding-bottom: 20px;
 }
 
 /* Wrapping element */
@@ -95,35 +77,17 @@ select,
 textarea {
     max-width: 280px;
 }
-
-/* Carousel */
-.carousel-caption p {
-    font-size: 20px;
-    line-height: 1.4;
-}
-
-/* buttons and links extension to use brackets: [ click me ] */
-.btn-bracketed::before {
-    display: inline-block;
-    content: "[";
-    padding-right: 0.5em;
-}
-
-.btn-bracketed::after {
-    display: inline-block;
-    content: "]";
-    padding-left: 0.5em;
-}
-
-/* Make .svg files in the carousel display properly in older browsers */
-.carousel-inner .item img[src$=".svg"] {
-    width: 100%;
-}
-
-/* Hide/rearrange for smaller screens */
-@media screen and (max-width: 767px) {
-    /* Hide captions */
-    .carousel-caption {
-        display: none;
-    }
-}
+.sidebar {
+    position: absolute;
+    top: 51px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: block;
+    padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    width: 200px;
+    height: 100%;
+    border-right: 1px solid #eee;
+  }

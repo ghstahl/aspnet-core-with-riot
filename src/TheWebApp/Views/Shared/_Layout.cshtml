@@ -10,7 +10,9 @@
         <!--
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css"/>
         <link rel="stylesheet" href="~/css/site.css"/>
+             
         -->
+        <link rel="stylesheet" href="~/JQB/styles.css" />
         <link rel="stylesheet" href="~/css/site.css" />
     </environment>
     <environment names="Staging,Production">
@@ -22,7 +24,7 @@
     @Html.Raw(JavaScriptSnippet.FullScript)
 </head>
 <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <nav class="navbar navbar-inverse navbar-static-top">
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -43,21 +45,22 @@
             </div>
         </div>
     </nav>
-    <div class="container body-content">
-        @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; 2017 - TheWebApp</p>
-        </footer>
-    </div>
-
+<div class="container-fluid">
+    @RenderBody()
+    <hr />
+    <footer>
+        <p>&copy; 2017 - TheWebApp</p>
+    </footer>
+</div>
+    
+    <script src="~/JQB/bundle.js"></script>
 <environment names="Development">
     <!--
     <script src="~/lib/jquery/dist/jquery.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     -->
-    <script src="~/JQB/bundle.min.js"></script>
+    
 </environment>
     <environment names="Staging,Production">
         <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"

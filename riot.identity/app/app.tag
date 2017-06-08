@@ -8,8 +8,8 @@ import RouteContributer     from './route-contributer.js';
 <app>
 
 <loading-indicator></loading-indicator>
-<header></header>
-<div class="container-fluid">
+
+
   <div class="row">
  
     <div class="col-sm-3 col-md-2 sidebar">
@@ -32,7 +32,7 @@ import RouteContributer     from './route-contributer.js';
     
 
   </div>
-</div>
+
 
 <script>
  	var self = this;
