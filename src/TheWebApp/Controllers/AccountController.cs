@@ -62,7 +62,19 @@ namespace TheWebApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                
+                // This doesn't count login failures towards account lockout
+                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                if (result.Succeeded)
+                {
+                    var response = new Dictionary<string, string>
+                    {
+                        {"status", "ok"}
+                    };
+
+                    _logger.LogInformation(1, "User logged in.");
+                    return Json(response);
+                }
             }
             return Json("test");
         }
