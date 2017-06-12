@@ -40,6 +40,7 @@
 
 <script>
 	var self = this;
+    self.mixin("forms-mixin");
 	self.name = 'home';
     self.items =  [
           { title: 'Register as a new user?', route: '/account/register'},
@@ -62,21 +63,6 @@
     self.route = (evt) => {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
       };
-    self.toJSONString = ( form ) =>{
-        var obj = {};
-        var elements = form.querySelectorAll( "input, select, textarea" );
-        for( var i = 0; i < elements.length; ++i ) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if( name ) {
-                obj[ name ] = value;
-            }
-        }
-
-        return JSON.stringify( obj );
-    }
 
 	self.on('mount', function() {
         let myForm = $('#myForm');

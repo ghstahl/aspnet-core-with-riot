@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 14);
+/******/ 	return __webpack_require__(__webpack_require__.s = 15);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(35);
+var	fixUrls = __webpack_require__(36);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3351,30 +3351,80 @@ function updateLink (link, options, obj) {
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var FormsMixin = function () {
+  function FormsMixin() {
+    _classCallCheck(this, FormsMixin);
+  }
+
+  // init method is a special one which can initialize
+  // the mixin when it's loaded to the tag and is not
+  // accessible from the tag its mixed in
+  FormsMixin.prototype.init = function init() {
+    var self = this;
+
+    console.log('FormsMixin:init:', self);
+    self.toJSONString = function (form) {
+      var obj = {};
+      var elements = form.querySelectorAll('input, select, textarea');
+
+      for (var i = 0; i < elements.length; ++i) {
+        var element = elements[i];
+        var name = element.name;
+        var value = element.value;
+
+        if (name) {
+          obj[name] = value;
+        }
+      }
+
+      return JSON.stringify(obj);
+    };
+  };
+
+  return FormsMixin;
+}();
+
+exports.default = FormsMixin;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var OptsMixin = {
 
-    // init method is a special one which can initialize
-    // the mixin when it's loaded to the tag and is not
-    // accessible from the tag its mixed in
-    init: function init() {
-        console.log('OptsMixin:init:', this);
-    },
+  // init method is a special one which can initialize
+  // the mixin when it's loaded to the tag and is not
+  // accessible from the tag its mixed in
+  init: function init() {
+    console.log('OptsMixin:init:', this);
+  },
 
-    getOpts: function getOpts() {
-        return this.opts;
-    },
+  getOpts: function getOpts() {
+    return this.opts;
+  },
 
-    setOpts: function setOpts(opts, update) {
-        this.opts = opts;
-        if (!update) this.update();
-        return this;
+  setOpts: function setOpts(opts, update) {
+    this.opts = opts;
+    if (!update) {
+      this.update();
     }
+    return this;
+  }
 };
 
 if (true) module.exports = OptsMixin;
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3584,7 +3634,7 @@ exports.default = AccountStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3686,7 +3736,7 @@ exports.default = NextConfigStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3834,19 +3884,19 @@ exports.default = SidebarStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-__webpack_require__(16);
-
-__webpack_require__(19);
-
 __webpack_require__(17);
 
-var _routeContributer = __webpack_require__(15);
+__webpack_require__(20);
+
+__webpack_require__(18);
+
+var _routeContributer = __webpack_require__(16);
 
 var _routeContributer2 = _interopRequireDefault(_routeContributer);
 
@@ -3902,7 +3952,7 @@ riot.tag2('app', '<loading-indicator></loading-indicator> <div class="row"> <div
 });
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3947,7 +3997,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports) {
 
 /* ========================================================================
@@ -4367,12 +4417,12 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(29), __webpack_require__(32), __webpack_require__(33), __webpack_require__(36));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(30), __webpack_require__(33), __webpack_require__(34), __webpack_require__(37));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -6990,13 +7040,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(27);
+var content = __webpack_require__(28);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7021,37 +7071,41 @@ if(false) {
 }
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(riot) {
 
-__webpack_require__(13);
-
-__webpack_require__(10);
-
-__webpack_require__(9);
+__webpack_require__(14);
 
 __webpack_require__(11);
 
-var _P7HostCore = __webpack_require__(12);
+__webpack_require__(10);
+
+__webpack_require__(12);
+
+var _P7HostCore = __webpack_require__(13);
 
 var _P7HostCore2 = _interopRequireDefault(_P7HostCore);
 
-var _optsMixin = __webpack_require__(5);
+var _optsMixin = __webpack_require__(6);
 
 var _optsMixin2 = _interopRequireDefault(_optsMixin);
 
-var _nextConfigStore = __webpack_require__(7);
+var _formsMixin = __webpack_require__(5);
+
+var _formsMixin2 = _interopRequireDefault(_formsMixin);
+
+var _nextConfigStore = __webpack_require__(8);
 
 var _nextConfigStore2 = _interopRequireDefault(_nextConfigStore);
 
-var _accountStore = __webpack_require__(6);
+var _accountStore = __webpack_require__(7);
 
 var _accountStore2 = _interopRequireDefault(_accountStore);
 
-var _sidebarStore = __webpack_require__(8);
+var _sidebarStore = __webpack_require__(9);
 
 var _sidebarStore2 = _interopRequireDefault(_sidebarStore);
 
@@ -7077,6 +7131,8 @@ riot.state.register = {};
 
 riot.mixin('opts-mixin', _optsMixin2.default);
 
+riot.mixin('forms-mixin', _formsMixin2.default);
+
 // Add the stores
 // //////////////////////////////////////////////////////
 
@@ -7096,7 +7152,7 @@ riot.mount('startup');
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7106,19 +7162,19 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-__webpack_require__(23);
+__webpack_require__(24);
+
+__webpack_require__(26);
 
 __webpack_require__(25);
 
-__webpack_require__(24);
+__webpack_require__(21);
 
-__webpack_require__(20);
+__webpack_require__(23);
 
 __webpack_require__(22);
 
-__webpack_require__(21);
-
-__webpack_require__(26);
+__webpack_require__(27);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7214,7 +7270,7 @@ exports.default = RouteContributer;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7247,17 +7303,17 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 });
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _nprogress = __webpack_require__(30);
+var _nprogress = __webpack_require__(31);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(34);
+__webpack_require__(35);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7286,7 +7342,7 @@ riot.tag2('loading-indicator', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7299,7 +7355,7 @@ riot.tag2('pretty-json', '<pre>{JSON.stringify(this.obj, null, 2)}</pre>', '', '
 });
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7331,7 +7387,7 @@ riot.tag2('sidebar', '<a each="{state.items}" onclick="{parent.route}" class="{p
 });
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7357,7 +7413,7 @@ riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"
 });
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7367,7 +7423,7 @@ var riot = __webpack_require__(0);
 riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Please check your email to reset your password. </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7379,6 +7435,7 @@ var riot = __webpack_require__(0);
 
 riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Enter your email.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
     var self = this;
+    self.mixin("forms-mixin");
     self.name = 'forgot';
 
     self.onSubmit = function (e) {
@@ -7397,22 +7454,6 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 
     self.route = function (evt) {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
-    };
-
-    self.toJSONString = function (form) {
-        var obj = {};
-        var elements = form.querySelectorAll("input, select, textarea");
-        for (var i = 0; i < elements.length; ++i) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if (name) {
-                obj[name] = value;
-            }
-        }
-
-        return JSON.stringify(obj);
     };
 
     self.on('mount', function () {
@@ -7434,7 +7475,7 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 });
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7443,6 +7484,7 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 var riot = __webpack_require__(0);
 riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
     var self = this;
+    self.mixin("forms-mixin");
     self.name = 'home';
     self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
     self.onSubmit = function (e) {
@@ -7461,21 +7503,6 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
     self.route = function (evt) {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
     };
-    self.toJSONString = function (form) {
-        var obj = {};
-        var elements = form.querySelectorAll("input, select, textarea");
-        for (var i = 0; i < elements.length; ++i) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if (name) {
-                obj[name] = value;
-            }
-        }
-
-        return JSON.stringify(obj);
-    };
 
     self.on('mount', function () {
         var myForm = $('#myForm');
@@ -7491,13 +7518,13 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 });
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-__webpack_require__(18);
+__webpack_require__(19);
 
 var riot = __webpack_require__(0);
 
@@ -7560,7 +7587,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7572,6 +7599,7 @@ var riot = __webpack_require__(0);
 
 riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Create a new account.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input class="form-control" name="password" type="password" data-minlength="6" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputPasswordConfirm" class="control-label">Confirm Password</label> <input class="form-control" name="confirmPassword" type="password" data-minlength="6" id="inputPasswordConfirm" data-match="#inputPassword" data-match-error="The password and confirmation password do not match." required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Register</button> </div> </form>', '', '', function (opts) {
     var self = this;
+    self.mixin("forms-mixin");
     self.name = 'register';
     self.status = {};
     self.onSubmit = function (e) {
@@ -7589,21 +7617,6 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
     };
     self.route = function (evt) {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
-    };
-    self.toJSONString = function (form) {
-        var obj = {};
-        var elements = form.querySelectorAll("input, select, textarea");
-        for (var i = 0; i < elements.length; ++i) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if (name) {
-                obj[name] = value;
-            }
-        }
-
-        return JSON.stringify(obj);
     };
 
     self.on('mount', function () {
@@ -7631,7 +7644,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7643,6 +7656,7 @@ var riot = __webpack_require__(0);
 
 riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Reset your password.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input class="form-control" name="password" type="password" data-minlength="6" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputPasswordConfirm" class="control-label">Confirm Password</label> <input class="form-control" name="confirmPassword" type="password" data-minlength="6" id="inputPasswordConfirm" data-match="#inputPassword" data-match-error="The password and confirmation password do not match." required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Reset</button> </div> <input name="code" ref="code" type="hidden"> </form>', '', '', function (opts) {
     var self = this;
+    self.mixin("forms-mixin");
     self.name = 'reset-password';
     self.status = {};
 
@@ -7663,22 +7677,6 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 
     self.route = function (evt) {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
-    };
-
-    self.toJSONString = function (form) {
-        var obj = {};
-        var elements = form.querySelectorAll("input, select, textarea");
-        for (var i = 0; i < elements.length; ++i) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if (name) {
-                obj[name] = value;
-            }
-        }
-
-        return JSON.stringify(obj);
     };
 
     self.on('mount', function () {
@@ -7704,7 +7702,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7718,7 +7716,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7732,7 +7730,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -7907,7 +7905,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8393,7 +8391,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8531,12 +8529,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(31);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -8888,7 +8886,7 @@ route.parser();
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -8914,13 +8912,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(28);
+var content = __webpack_require__(29);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -8945,7 +8943,7 @@ if(false) {
 }
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports) {
 
 
@@ -9040,7 +9038,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports) {
 
 (function(self) {

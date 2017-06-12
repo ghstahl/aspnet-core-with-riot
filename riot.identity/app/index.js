@@ -27,6 +27,8 @@ riot.state.register = {};
 // //////////////////////////////////////////////////////
 import OptsMixin from './mixins/opts-mixin.js';
 riot.mixin('opts-mixin', OptsMixin);
+import FormsMixin from './mixins/forms-mixin.js';
+riot.mixin('forms-mixin', FormsMixin);
 
 // Add the stores
 // //////////////////////////////////////////////////////

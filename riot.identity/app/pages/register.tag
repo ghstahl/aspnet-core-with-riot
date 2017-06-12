@@ -49,6 +49,7 @@ import '../components/validation-summary.tag'
 
 <script>
 	var self = this;
+    self.mixin("forms-mixin");
 	self.name = 'register';
 	self.status = {
         };
@@ -69,21 +70,7 @@ import '../components/validation-summary.tag'
     self.route = (evt) => {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
       };
-    self.toJSONString = ( form ) =>{
-        var obj = {};
-        var elements = form.querySelectorAll( "input, select, textarea" );
-        for( var i = 0; i < elements.length; ++i ) {
-            var element = elements[i];
-            var name = element.name;
-            var value = element.value;
-
-            if( name ) {
-                obj[ name ] = value;
-            }
-        }
-
-        return JSON.stringify( obj );
-    }
+    
 
 	self.on('mount', function() {
 		riot.control.on(riot.EVT.accountStore.out.registerComplete,
