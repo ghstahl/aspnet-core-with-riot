@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using TheWebApp.Models;
 using TheWebApp.Models.AccountViewModels;
 using TheWebApp.Services;
@@ -54,12 +56,14 @@ namespace TheWebApp.Controllers
             return View();
         }
         //
-        // POST: /Account/Login
+        // POST: /Account/LoginJson
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> LoginJson([FromBody]LoginViewModel model)
         {
+            dynamic response = JObject.Parse("{status:{}}");
+            response.status.ok = false;
             if (ModelState.IsValid)
             {
                 // This doesn't count login failures towards account lockout
@@ -67,16 +71,93 @@ namespace TheWebApp.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    var response = new Dictionary<string, string>
-                    {
-                        {"status", "ok"}
-                    };
-
+                    response.status.ok = true;
                     _logger.LogInformation(1, "User logged in.");
                     return Json(response);
                 }
+                response.status.requiresTwoFactor = result.RequiresTwoFactor;
+                response.status.isLockedOut = result.IsLockedOut;
             }
-            return Json("test");
+            return Json(response);
+        }
+
+        //
+        // POST: /Account/ForgotPassword
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPasswordJson([FromBody]ForgotPasswordViewModel model)
+        {
+            dynamic response = JObject.Parse("{status:{}}");
+            response.status.ok = false;
+
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                {
+                    response.status.ok = true;
+                    // Don't reveal that the user does not exist or is not confirmed
+                    return Json(response);
+                }
+
+                // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
+                // Send an email with this link
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
+                   $"Please reset your password by clicking here: <a href='{callbackUrl}&'>link</a>");
+                response.status.ok = true;
+                return Json(response);
+            }
+            return Json(response);
+        }
+
+        //
+        // POST: /Account/RegisterJson
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegisterJson([FromBody]RegisterViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            if (ModelState.IsValid)
+            {
+                var userE = await _userManager.FindByEmailAsync(model.Email);
+                if (userE != null && !(await _userManager.IsEmailConfirmedAsync(userE)))
+                {
+                    response.status.ok = true;
+                    var code = await _userManager.GeneratePasswordResetTokenAsync(userE);
+                    await _userManager.ResetPasswordAsync(userE, code, model.Password);
+                    await FireOffEmailConfirmation(userE);
+
+                    _logger.LogInformation(3, "User already created, fired off another email confirmation.");
+                    return Json(response);
+                }
+
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    response.status.ok = true;
+                    await FireOffEmailConfirmation(userE);
+                    //    await _signInManager.SignInAsync(user, isPersistent: false);
+                    _logger.LogInformation(3, "User created a new account with password.");
+                    return Json(response);
+                }
+
+                dynamic errors = new List<dynamic>();
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.Description);
+                }
+                response.status.errors = errors;
+            }
+
+            // If we got this far, something failed, redisplay form
+            return Json(response);
         }
 
         //
@@ -127,6 +208,20 @@ namespace TheWebApp.Controllers
             return View();
         }
 
+        private async Task FireOffEmailConfirmation(ApplicationUser user)
+        {
+            // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
+            // Send an email with this link
+            if (user != null && !(await _userManager.IsEmailConfirmedAsync(user)))
+            {
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+
+                //Herb: had to put a & at the end of that href, because the papercut smtp client was including the single quote as part of the url
+                await _emailSender.SendEmailAsync(user.Email, "Confirm your account",
+                    $"Please confirm your account by clicking this link: <a href='{callbackUrl}&'>link</a>");
+            }
+        }
         //
         // POST: /Account/Register
         [HttpPost]
@@ -137,17 +232,31 @@ namespace TheWebApp.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
+                var userE = await _userManager.FindByEmailAsync(model.Email);
+                if (userE != null && !(await _userManager.IsEmailConfirmedAsync(userE)))
+                {
+                    var code = await _userManager.GeneratePasswordResetTokenAsync(userE);
+                    await _userManager.ResetPasswordAsync(userE, code, model.Password);
+                    await FireOffEmailConfirmation(userE);
+                    _logger.LogInformation(3, "User already created, fired off another email confirmation.");
+                    return RedirectToLocal(returnUrl);
+                }
+            
+
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
                     // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
                     // Send an email with this link
-                    //var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    //var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
-                    //await _emailSender.SendEmailAsync(model.Email, "Confirm your account",
-                    //    $"Please confirm your account by clicking this link: <a href='{callbackUrl}'>link</a>");
-                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+
+                    //Herb: had to put a & at the end of that href, because the papercut smtp client was including the single quote as part of the url
+                    await _emailSender.SendEmailAsync(model.Email, "Confirm your account",
+                        $"Please confirm your account by clicking this link: <a href='{callbackUrl}&'>link</a>");
+                    //await _signInManager.SignInAsync(user, isPersistent: false);
+                 //   var result2 = await _userManager.ConfirmEmailAsync(user, code);
                     _logger.LogInformation(3, "User created a new account with password.");
                     return RedirectToLocal(returnUrl);
                 }
@@ -303,11 +412,11 @@ namespace TheWebApp.Controllers
 
                 // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
                 // Send an email with this link
-                //var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                //var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
-                //await _emailSender.SendEmailAsync(model.Email, "Reset Password",
-                //   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
-                //return View("ForgotPasswordConfirmation");
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
+                   $"Please reset your password by clicking here: <a href='{callbackUrl}&'>link</a>");
+                return View("ForgotPasswordConfirmation");
             }
 
             // If we got this far, something failed, redisplay form

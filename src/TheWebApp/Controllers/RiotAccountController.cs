@@ -44,5 +44,15 @@ namespace TheWebApp.Controllers
         {
             return View();
         }
+        //
+        // GET: /Account/Login
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login()
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+            return View();
+        }
     }
 }

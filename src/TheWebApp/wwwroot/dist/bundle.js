@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 13);
+/******/ 	return __webpack_require__(__webpack_require__.s = 14);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -2892,6 +2892,19 @@ exports.default = DeepFreeze;
 
 /***/ }),
 /* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var riot = __webpack_require__(0);
+riot.tag2('validation-summary', '<div if="{this.status.errors}" class="text-danger validation-summary-errors"> <ul> <li each="{error in status.errors}">{error}</li> </ul> </div>', '', '', function (opts) {
+    var self = this;
+    self.status = self.opts.status;
+});
+
+/***/ }),
+/* 3 */
 /***/ (function(module, exports) {
 
 /*
@@ -2973,7 +2986,7 @@ function toComment(sourceMap) {
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -3019,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(31);
+var	fixUrls = __webpack_require__(34);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3332,7 +3345,7 @@ function updateLink (link, options, obj) {
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3361,7 +3374,7 @@ var OptsMixin = {
 if (true) module.exports = OptsMixin;
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3390,10 +3403,16 @@ Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
     login: Constants.NAMESPACE + 'login',
-    loginResult: Constants.NAMESPACE + 'login-result'
+    loginResult: Constants.NAMESPACE + 'login-result',
+    forgot: Constants.NAMESPACE + 'forgot',
+    forgotResult: Constants.NAMESPACE + 'forgot-result',
+    register: Constants.NAMESPACE + 'register',
+    registerResult: Constants.NAMESPACE + 'register-result'
   },
   out: {
-    loginComplete: Constants.NAMESPACE + 'login-complete'
+    loginComplete: Constants.NAMESPACE + 'login-complete',
+    forgotComplete: Constants.NAMESPACE + 'forgot-complete',
+    registerComplete: Constants.NAMESPACE + 'register-complete'
   }
 };
 _deepFreeze2.default.freeze(Constants);
@@ -3410,6 +3429,7 @@ var AccountStore = function () {
     _classCallCheck(this, AccountStore);
 
     var self = this;
+
     riot.observable(this);
     self._bound = false;
     self.bindEvents();
@@ -3419,6 +3439,10 @@ var AccountStore = function () {
     if (this._bound === false) {
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
+      this.on(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
+      this.on(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this._bound = !this._bound;
     }
   };
@@ -3427,8 +3451,22 @@ var AccountStore = function () {
     if (this._bound === true) {
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
+      this.off(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
+      this.off(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this._bound = !this._bound;
     }
+  };
+
+  AccountStore.prototype._redirect = function _redirect() {
+    var returnUrl = '/';
+
+    if (riot.state.account.returnUrl) {
+      returnUrl = riot.state.account.returnUrl;
+    }
+    riot.state.account.returnUrl = undefined;
+    window.$(location).attr('href', returnUrl);
   };
 
   AccountStore.prototype._onLogin = function _onLogin(body) {
@@ -3447,7 +3485,61 @@ var AccountStore = function () {
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'login1234' });
     } else {
-      this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
+      if (result.json.status.ok) {
+        riot.state.login = {};
+        this._redirect();
+      } else {
+        riot.state.login.status = result.json.status;
+        this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
+      }
+    }
+  };
+
+  AccountStore.prototype._onForgot = function _onForgot(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.login, body);
+
+    var url = '/Account/ForgotPasswordJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.forgotResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onForgotResult = function _onForgotResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.forgotResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'forgot1234' });
+    } else {
+      riot.state.forgot.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.forgotComplete);
+    }
+  };
+
+  AccountStore.prototype._onRegister = function _onRegister(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.register, body);
+
+    riot.state.register = { status: {} };
+    var url = '/Account/RegisterJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.registerResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onRegisterResult = function _onRegisterResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.registerResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'register1234' });
+    } else {
+      if (result.json.status.ok) {
+        riot.state.register = {};
+        this._redirect();
+      } else {
+        riot.state.register.status = result.json.status;
+        this.trigger(Constants.WELLKNOWN_EVENTS.out.registerComplete);
+      }
     }
   };
 
@@ -3458,7 +3550,7 @@ exports.default = AccountStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3559,7 +3651,7 @@ exports.default = NextConfigStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3707,19 +3799,19 @@ exports.default = SidebarStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-__webpack_require__(15);
+__webpack_require__(16);
 
 __webpack_require__(19);
 
 __webpack_require__(17);
 
-var _routeContributer = __webpack_require__(14);
+var _routeContributer = __webpack_require__(15);
 
 var _routeContributer2 = _interopRequireDefault(_routeContributer);
 
@@ -3775,7 +3867,7 @@ riot.tag2('app', '<loading-indicator></loading-indicator> <div class="row"> <div
 });
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3820,7 +3912,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports) {
 
 /* ========================================================================
@@ -4240,12 +4332,12 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(25), __webpack_require__(28), __webpack_require__(29), __webpack_require__(32));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(28), __webpack_require__(31), __webpack_require__(32), __webpack_require__(35));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -6414,32 +6506,22 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Validator = function () {
-  function Validator() {
-    _classCallCheck(this, Validator);
-  }
-
-  Validator.validateType = function validateType(obj, type, name) {
-    if (!obj) {
-      throw new Error(name + ': is NULL');
+Object.defineProperty(exports, "__esModule", { value: true });
+var Validator = (function () {
+    function Validator() {
     }
-    if (!(obj instanceof type)) {
-      throw new Error(name + ': is NOT of type:' + type.name);
-    }
-  };
-
-  return Validator;
-}();
-
+    Validator.validateType = function (obj, type, name) {
+        if (!obj) {
+            throw new Error(name + ': is NULL');
+        }
+        if (!(obj instanceof type)) {
+            throw new Error(name + ': is NOT of type:' + type.name);
+        }
+    };
+    return Validator;
+}());
 exports.default = Validator;
-module.exports = exports['default'];
+
 
 /***/ }),
 /* 16 */
@@ -6454,13 +6536,11 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension() {
+var RiotRouteExtension = function RiotRouteExtension(riot) {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
-  self.name = 'RiotRouteExtension';
-  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6564,61 +6644,6 @@ module.exports = exports['default'];
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var RandomString = function RandomString() {
-  _classCallCheck(this, RandomString);
-
-  var self = this;
-
-  self.name = 'RandomString';
-  self.namespace = self.name + ':';
-  self.generateRandomString = function (length) {
-    if (length && length > 16) {
-      length = 16;
-    } else {
-      length = 16;
-    }
-
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-  self.hashString = function (str) {
-    var hash = 5381;
-    var i = str.length;
-
-    while (i) {
-      hash = hash * 33 ^ str.charCodeAt(--i);
-    }
-    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-    * integers. Since we want the results to be always positive, convert the
-    * signed int to an unsigned by doing an unsigned bitshift. */
-    return hash >>> 0;
-  };
-  self.randomHash = function (length) {
-    return self.hashString(self.generateRandomString(length));
-  };
-};
-
-exports.default = RandomString;
-module.exports = exports['default'];
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -6665,6 +6690,49 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var RandomString = (function () {
+    function RandomString() {
+    }
+    RandomString.prototype.generateRandomString = function (length) {
+        if (length && length > 16) {
+            length = 16;
+        }
+        else {
+            length = 16;
+        }
+        var text = '';
+        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    };
+    RandomString.prototype.hashString = function (str) {
+        var hash = 5381;
+        var i = str.length;
+        while (i) {
+            hash = (hash * 33) ^ str.charCodeAt(--i);
+        }
+        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+        * integers. Since we want the results to be always positive, convert the
+        * signed int to an unsigned by doing an unsigned bitshift. */
+        return hash >>> 0;
+    };
+    RandomString.prototype.randomHash = function (str) {
+        return this.hashString(this.generateRandomString(length));
+    };
+    return RandomString;
+}());
+exports.default = RandomString;
+
+
+/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -6709,7 +6777,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(18);
+var _randomString = __webpack_require__(19);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -6769,7 +6837,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(19);
+__webpack_require__(18);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6782,7 +6850,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default();
+    this._masterEventTable = new _masterEventTable2.default(riot);
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -6806,7 +6874,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default();
+    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -6863,13 +6931,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(23);
+var content = __webpack_require__(26);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -6877,7 +6945,7 @@ var transform;
 var options = {}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, options);
+var update = __webpack_require__(4)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -6894,37 +6962,37 @@ if(false) {
 }
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(riot) {
 
-__webpack_require__(12);
-
-__webpack_require__(9);
-
-__webpack_require__(8);
+__webpack_require__(13);
 
 __webpack_require__(10);
 
-var _P7HostCore = __webpack_require__(11);
+__webpack_require__(9);
+
+__webpack_require__(11);
+
+var _P7HostCore = __webpack_require__(12);
 
 var _P7HostCore2 = _interopRequireDefault(_P7HostCore);
 
-var _optsMixin = __webpack_require__(4);
+var _optsMixin = __webpack_require__(5);
 
 var _optsMixin2 = _interopRequireDefault(_optsMixin);
 
-var _nextConfigStore = __webpack_require__(6);
+var _nextConfigStore = __webpack_require__(7);
 
 var _nextConfigStore2 = _interopRequireDefault(_nextConfigStore);
 
-var _accountStore = __webpack_require__(5);
+var _accountStore = __webpack_require__(6);
 
 var _accountStore2 = _interopRequireDefault(_accountStore);
 
-var _sidebarStore = __webpack_require__(7);
+var _sidebarStore = __webpack_require__(8);
 
 var _sidebarStore2 = _interopRequireDefault(_sidebarStore);
 
@@ -6933,11 +7001,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var p7HostCore = new _P7HostCore2.default(riot);
 
 p7HostCore.Initialize();
-riot.state.route.defaultRoute = '/main/home';
+riot.state.route.defaultRoute = '/account';
 riot.state.sidebar = {
   touch: 0,
-  items: [{ title: 'Home', route: '/main/home' }, { title: 'Projects', route: '/main/projects' }]
+  items: [{ title: 'Account', route: '/account' }, { title: 'Projects', route: '/main/projects' }]
 };
+
+riot.state.account = {};
+riot.state.login = {};
+riot.state.forgot = {};
+riot.state.register = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -6963,7 +7036,7 @@ riot.mount('startup');
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6973,11 +7046,17 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-__webpack_require__(21);
+__webpack_require__(23);
+
+__webpack_require__(25);
+
+__webpack_require__(24);
+
+__webpack_require__(20);
 
 __webpack_require__(22);
 
-__webpack_require__(20);
+__webpack_require__(21);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -6991,21 +7070,46 @@ var RouteContributer = function () {
   }
 
   RouteContributer.prototype._initializeViewSet = function _initializeViewSet() {
+    this.defaultRoute = '/account/login?returnurl=%2F';
     this._viewsSet = new Set();
+
     var s = this._viewsSet;
 
-    s.add('home');
+    s.add('login');
+    s.add('register');
+    s.add('forgot');
+    s.add('forgot-confirmation');
+
     s.add('projects');
+
     this.views = Array.from(s);
-    this.defaultRoute = '/main/home/';
   };
 
   RouteContributer.prototype.contributeRoutes = function contributeRoutes(r) {
     var self = this;
 
     console.log(self.name, riot.EVT.router.out.contributeRoutes, r);
-    r('/main/*', function (name) {
-      console.log('route handler of /main/' + name);
+
+    // http://localhost:41749/riotaccount/login#account/login?returnurl=%2Fabout
+    r('/account/login?returnurl=*', function (returnUrl) {
+      console.log('/account/login?returnurl=*: ' + returnUrl);
+      var view = 'login';
+
+      riot.state.account.returnUrl = decodeURIComponent(returnUrl);
+
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+    // http://localhost:41749/riotaccount/register#account/register?returnurl=%2Fabout
+    r('/account/register?returnurl=*', function (returnUrl) {
+      console.log('/account/register?returnurl=*: ' + returnUrl);
+      var view = 'register';
+
+      riot.state.account.returnUrl = decodeURIComponent(returnUrl);
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+
+    r('/account/*', function (name) {
+      console.log('route handler of /account/' + name);
       var view = name;
 
       if (self.views.indexOf(view) === -1) {
@@ -7015,8 +7119,8 @@ var RouteContributer = function () {
       }
     });
 
-    r('/main..', function () {
-      console.log('route handler of /main');
+    r('/account..', function () {
+      console.log('route handler of /account');
       riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, self.defaultRoute);
     });
 
@@ -7033,7 +7137,7 @@ exports.default = RouteContributer;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7066,46 +7170,17 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 });
 
 /***/ }),
-/* 16 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var riot = __webpack_require__(0);
-riot.tag2('itemlist', '<div class="row"> <div class="col-md-6"> <h3>{opts.title}</h3> <ul> <li each="{items}">{this.name}</li> </ul> </div> <div class="col-md-6"> <h3>{opts.title}</h3> <ul> <li each="{items}">{this.name}</li> </ul> </div> </div>', '', '', function (opts) {
-  var _this = this;
-
-  var self = this;
-  self.items = [];
-
-  self.on('mount', function () {
-    console.log('itemlist mount');
-    riot.control.on(riot.EVT.loadItemsSuccess, self.onLoadItemsSuccess);
-    riot.control.trigger(riot.EVT.loadItems);
-  });
-  self.on('unmount', function () {
-    console.log('itemlist unmount');
-    riot.control.off(riot.EVT.loadItemsSuccess, self.onLoadItemsSuccess);
-  });
-  self.onLoadItemsSuccess = function (items) {
-    _this.items = items;
-    _this.update();
-  };
-});
-
-/***/ }),
 /* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _nprogress = __webpack_require__(26);
+var _nprogress = __webpack_require__(29);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(30);
+__webpack_require__(33);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7211,14 +7286,88 @@ riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"
 "use strict";
 
 
-__webpack_require__(16);
+var riot = __webpack_require__(0);
+riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Please check your email to reset your password. </p>', '', '', function (opts) {});
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(2);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('home', '<div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
+riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Enter your email.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.name = 'forgot';
+
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.forgot, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.toJSONString = function (form) {
+        var obj = {};
+        var elements = form.querySelectorAll("input, select, textarea");
+        for (var i = 0; i < elements.length; ++i) {
+            var element = elements[i];
+            var name = element.name;
+            var value = element.value;
+
+            if (name) {
+                obj[name] = value;
+            }
+        }
+
+        return JSON.stringify(obj);
+    };
+
+    self.on('mount', function () {
+        riot.state.forgot = {};
+        riot.control.on(riot.EVT.accountStore.out.forgotComplete, self._onForgotComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+    });
+
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.forgotComplete, self._onForgotComplete);
+    });
+
+    self._onForgotComplete = function () {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/forgot-confirmation');
+    };
+});
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var riot = __webpack_require__(0);
+riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
     var self = this;
     self.name = 'home';
-    self.items = [{ title: 'Register as a new user?', route: '/main/register' }, { title: 'Forgot your password?', route: '/main/forgot' }];
+    self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
     self.onSubmit = function (e) {
         var myForm = $('#myForm');
         var data = self.toJSONString(myForm[0]);
@@ -7255,6 +7404,7 @@ riot.tag2('home', '<div class="col-md-8"> <section> <h4>Use a local account to l
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
+        self.q = riot.route.query();
     });
     self.on('unmount', function () {});
 
@@ -7264,7 +7414,7 @@ riot.tag2('home', '<div class="col-md-8"> <section> <h4>Use a local account to l
 });
 
 /***/ }),
-/* 22 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7333,24 +7483,95 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+"use strict";
+
+
+__webpack_require__(2);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Create a new account.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input class="form-control" name="password" type="password" data-minlength="6" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputPasswordConfirm" class="control-label">Confirm Password</label> <input class="form-control" name="confirmPassword" type="password" data-minlength="6" id="inputPasswordConfirm" data-match="#inputPassword" data-match-error="The password and confirmation password do not match." required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Register</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.name = 'register';
+    self.status = {};
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.register, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+    self.toJSONString = function (form) {
+        var obj = {};
+        var elements = form.querySelectorAll("input, select, textarea");
+        for (var i = 0; i < elements.length; ++i) {
+            var element = elements[i];
+            var name = element.name;
+            var value = element.value;
+
+            if (name) {
+                obj[name] = value;
+            }
+        }
+
+        return JSON.stringify(obj);
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.registerComplete, self._onRegisterComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+        riot.state.register = {
+            status: {
+                errors: null
+            }
+        };
+    });
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.registerComplete, self._onRegisterComplete);
+    });
+    self._onRegisterComplete = function () {
+        self.status.errors = riot.state.register.status.errors;
+        self.update();
+    };
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+    };
+});
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(3)(undefined);
 // imports
 
 
 // module
-exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down content because we have a fixed navbar that is 50px tall */\r\nbody {\r\n}\r\n a:hover {\r\n  cursor:pointer;\r\n }\r\n\r\n .spacer { margin:0; padding:0; height:15px; }\r\n \r\n\r\n/*\r\n * Sidebar\r\n */\r\n\r\n/* Hide for mobile, show later */\r\n/*\r\n.sidebar {\r\n  display: none;\r\n}\r\n@media (min-width: 768px) {\r\n  .sidebar {\r\n    position: fixed;\r\n    top: 51px;\r\n    bottom: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n    display: block;\r\n    padding: 20px;\r\n    overflow-x: hidden;\r\n    overflow-y: auto; \r\n    border-right: 1px solid #eee;\r\n  }\r\n}\r\n*/\r\n  \r\n \r\n#mainContent {\r\n\r\n \r\n  float: left;   \r\n  margin-left: 200px;\r\n  height: 100%;\r\n}\r\n\r\n/*\r\n * Main content\r\n */\r\n\r\n.main {\r\n  padding-right: 20px;\r\n  padding-left: 20px;\r\n}\r\n@media (min-width: 768px) {\r\n  .main {\r\n    padding-right: 20px;\r\n    padding-left: 20px;\r\n  }\r\n}\r\n.main .page-header {\r\n  margin-top: 0;\r\n}\r\n\r\n/* Wrapping element */\r\n/* Set some basic padding to keep content from hitting the edges */\r\n.body-content {\r\n    padding-left: 15px;\r\n    padding-right: 15px;\r\n}\r\n\r\n/* Set widths on the form inputs since otherwise they're 100% wide */\r\ninput,\r\nselect,\r\ntextarea {\r\n    max-width: 280px;\r\n}\r\n.sidebar {\r\n    position: absolute;\r\n    top: 51px;\r\n    bottom: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n    display: block;\r\n    padding: 20px;\r\n    overflow-x: hidden;\r\n    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */\r\n    width: 200px;\r\n    height: 100%;\r\n    border-right: 1px solid #eee;\r\n  }", ""]);
+exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down content because we have a fixed navbar that is 50px tall */\r\n\r\na:hover {\r\n  cursor:pointer;\r\n }\r\n\r\n .spacer { margin:0; padding:0; height:15px; }\r\n \r\n\r\n/*\r\n * Sidebar\r\n */\r\n\r\n/* Hide for mobile, show later */\r\n/*\r\n.sidebar {\r\n  display: none;\r\n}\r\n@media (min-width: 768px) {\r\n  .sidebar {\r\n    position: fixed;\r\n    top: 51px;\r\n    bottom: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n    display: block;\r\n    padding: 20px;\r\n    overflow-x: hidden;\r\n    overflow-y: auto; \r\n    border-right: 1px solid #eee;\r\n  }\r\n}\r\n*/\r\n  \r\n \r\n#mainContent {\r\n\r\n \r\n  float: left;   \r\n  margin-left: 200px;\r\n  height: 100%;\r\n}\r\n\r\n/*\r\n * Main content\r\n */\r\n\r\n.main {\r\n  padding-right: 20px;\r\n  padding-left: 20px;\r\n}\r\n@media (min-width: 768px) {\r\n  .main {\r\n    padding-right: 20px;\r\n    padding-left: 20px;\r\n  }\r\n}\r\n.main .page-header {\r\n  margin-top: 0;\r\n}\r\n\r\n/* Wrapping element */\r\n/* Set some basic padding to keep content from hitting the edges */\r\n.body-content {\r\n    padding-left: 15px;\r\n    padding-right: 15px;\r\n}\r\n\r\n/* Set widths on the form inputs since otherwise they're 100% wide */\r\ninput,\r\nselect,\r\ntextarea {\r\n    max-width: 280px;\r\n}\r\n.sidebar {\r\n    position: absolute;\r\n    top: 51px;\r\n    bottom: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n    display: block;\r\n    padding: 20px;\r\n    overflow-x: hidden;\r\n    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */\r\n    width: 200px;\r\n    height: 100%;\r\n    border-right: 1px solid #eee;\r\n  }", ""]);
 
 // exports
 
 
 /***/ }),
-/* 24 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(3)(undefined);
 // imports
 
 
@@ -7361,7 +7582,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 25 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -7536,7 +7757,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 26 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8022,7 +8243,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 27 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8160,12 +8381,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 28 */
+/* 31 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(27);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(30);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -8517,7 +8738,7 @@ route.parser();
 
 
 /***/ }),
-/* 29 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -8543,13 +8764,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 30 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(24);
+var content = __webpack_require__(27);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -8557,7 +8778,7 @@ var transform;
 var options = {}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, options);
+var update = __webpack_require__(4)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -8574,7 +8795,7 @@ if(false) {
 }
 
 /***/ }),
-/* 31 */
+/* 34 */
 /***/ (function(module, exports) {
 
 
@@ -8669,7 +8890,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 32 */
+/* 35 */
 /***/ (function(module, exports) {
 
 (function(self) {
