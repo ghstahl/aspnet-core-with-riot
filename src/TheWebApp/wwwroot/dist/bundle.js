@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(34);
+var	fixUrls = __webpack_require__(35);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3406,12 +3406,15 @@ Constants.WELLKNOWN_EVENTS = {
     loginResult: Constants.NAMESPACE + 'login-result',
     forgot: Constants.NAMESPACE + 'forgot',
     forgotResult: Constants.NAMESPACE + 'forgot-result',
+    reset: Constants.NAMESPACE + 'reset',
+    resetResult: Constants.NAMESPACE + 'reset-result',
     register: Constants.NAMESPACE + 'register',
     registerResult: Constants.NAMESPACE + 'register-result'
   },
   out: {
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
+    resetComplete: Constants.NAMESPACE + 'reset-complete',
     registerComplete: Constants.NAMESPACE + 'register-complete'
   }
 };
@@ -3443,6 +3446,8 @@ var AccountStore = function () {
       this.on(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
       this.on(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
+      this.on(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
       this._bound = !this._bound;
     }
   };
@@ -3455,6 +3460,8 @@ var AccountStore = function () {
       this.off(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
       this.off(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
+      this.off(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
       this._bound = !this._bound;
     }
   };
@@ -3543,6 +3550,33 @@ var AccountStore = function () {
     }
   };
 
+  AccountStore.prototype._onReset = function _onReset(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.reset, body);
+
+    riot.state.register = { status: {} };
+    var url = '/Account/ResetPasswordJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.resetResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onResetResult = function _onResetResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.resetResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'register1234' });
+    } else {
+      if (result.json.status.ok) {
+        riot.state.resetPassword = {};
+        this._redirect();
+      } else {
+        riot.state.resetPassword.status = result.json.status;
+        this.trigger(Constants.WELLKNOWN_EVENTS.out.resetComplete);
+      }
+    }
+  };
+
   return AccountStore;
 }();
 
@@ -3600,6 +3634,7 @@ var NextConfigStore = function () {
     _classCallCheck(this, NextConfigStore);
 
     var self = this;
+
     riot.observable(this);
     self._bound = false;
     self.bindEvents();
@@ -4337,7 +4372,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(28), __webpack_require__(31), __webpack_require__(32), __webpack_require__(35));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(29), __webpack_require__(32), __webpack_require__(33), __webpack_require__(36));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -6506,22 +6541,32 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var Validator = (function () {
-    function Validator() {
-    }
-    Validator.validateType = function (obj, type, name) {
-        if (!obj) {
-            throw new Error(name + ': is NULL');
-        }
-        if (!(obj instanceof type)) {
-            throw new Error(name + ': is NOT of type:' + type.name);
-        }
-    };
-    return Validator;
-}());
-exports.default = Validator;
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Validator = function () {
+  function Validator() {
+    _classCallCheck(this, Validator);
+  }
+
+  Validator.validateType = function validateType(obj, type, name) {
+    if (!obj) {
+      throw new Error(name + ': is NULL');
+    }
+    if (!(obj instanceof type)) {
+      throw new Error(name + ': is NOT of type:' + type.name);
+    }
+  };
+
+  return Validator;
+}();
+
+exports.default = Validator;
+module.exports = exports['default'];
 
 /***/ }),
 /* 16 */
@@ -6536,11 +6581,13 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension(riot) {
+var RiotRouteExtension = function RiotRouteExtension() {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
+  self.name = 'RiotRouteExtension';
+  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6644,6 +6691,61 @@ module.exports = exports['default'];
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var RandomString = function RandomString() {
+  _classCallCheck(this, RandomString);
+
+  var self = this;
+
+  self.name = 'RandomString';
+  self.namespace = self.name + ':';
+  self.generateRandomString = function (length) {
+    if (length && length > 16) {
+      length = 16;
+    } else {
+      length = 16;
+    }
+
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+  self.hashString = function (str) {
+    var hash = 5381;
+    var i = str.length;
+
+    while (i) {
+      hash = hash * 33 ^ str.charCodeAt(--i);
+    }
+    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+    * integers. Since we want the results to be always positive, convert the
+    * signed int to an unsigned by doing an unsigned bitshift. */
+    return hash >>> 0;
+  };
+  self.randomHash = function (length) {
+    return self.hashString(self.generateRandomString(length));
+  };
+};
+
+exports.default = RandomString;
+module.exports = exports['default'];
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -6690,49 +6792,6 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var RandomString = (function () {
-    function RandomString() {
-    }
-    RandomString.prototype.generateRandomString = function (length) {
-        if (length && length > 16) {
-            length = 16;
-        }
-        else {
-            length = 16;
-        }
-        var text = '';
-        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < length; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
-    };
-    RandomString.prototype.hashString = function (str) {
-        var hash = 5381;
-        var i = str.length;
-        while (i) {
-            hash = (hash * 33) ^ str.charCodeAt(--i);
-        }
-        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-        * integers. Since we want the results to be always positive, convert the
-        * signed int to an unsigned by doing an unsigned bitshift. */
-        return hash >>> 0;
-    };
-    RandomString.prototype.randomHash = function (str) {
-        return this.hashString(this.generateRandomString(length));
-    };
-    return RandomString;
-}());
-exports.default = RandomString;
-
-
-/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -6777,7 +6836,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(19);
+var _randomString = __webpack_require__(18);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -6837,7 +6896,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(18);
+__webpack_require__(19);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6850,7 +6909,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default(riot);
+    this._masterEventTable = new _masterEventTable2.default();
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -6874,7 +6933,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
+    this._riotRouteExtension = new _riotRouteExtension2.default();
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -6937,7 +6996,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(26);
+var content = __webpack_require__(27);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7010,6 +7069,7 @@ riot.state.sidebar = {
 riot.state.account = {};
 riot.state.login = {};
 riot.state.forgot = {};
+riot.state.resetPassword = {};
 riot.state.register = {};
 
 // Add the mixings
@@ -7058,6 +7118,8 @@ __webpack_require__(22);
 
 __webpack_require__(21);
 
+__webpack_require__(26);
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var RouteContributer = function () {
@@ -7079,6 +7141,7 @@ var RouteContributer = function () {
     s.add('register');
     s.add('forgot');
     s.add('forgot-confirmation');
+    s.add('reset-password');
 
     s.add('projects');
 
@@ -7105,6 +7168,20 @@ var RouteContributer = function () {
       var view = 'register';
 
       riot.state.account.returnUrl = decodeURIComponent(returnUrl);
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+
+    // http://localhost:41749/riotaccount#account/reset-password?userid={id}&code={code}&
+    r('/account/reset-password..', function () {
+      var q = riot.route.query();
+      var userid = q.userid;
+      var code = q.code;
+      var view = 'reset-password';
+
+      console.log('/account/reset-password..:', userid, code);
+
+      riot.state.resetPassword.userid = userid;
+      riot.state.resetPassword.code = code;
       riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
     });
 
@@ -7176,11 +7253,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(29);
+var _nprogress = __webpack_require__(30);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(33);
+__webpack_require__(34);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7557,6 +7634,79 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 /* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
+__webpack_require__(2);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Reset your password.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputEmail" class="control-label">Email</label> <input class="form-control" name="email" id="inputEmail" placeholder="Email" data-error="The Email field is required." required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input class="form-control" name="password" type="password" data-minlength="6" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputPasswordConfirm" class="control-label">Confirm Password</label> <input class="form-control" name="confirmPassword" type="password" data-minlength="6" id="inputPasswordConfirm" data-match="#inputPassword" data-match-error="The password and confirmation password do not match." required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Reset</button> </div> <input name="code" ref="code" type="hidden"> </form>', '', '', function (opts) {
+    var self = this;
+    self.name = 'reset-password';
+    self.status = {};
+
+    self.email = "";
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.reset, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.toJSONString = function (form) {
+        var obj = {};
+        var elements = form.querySelectorAll("input, select, textarea");
+        for (var i = 0; i < elements.length; ++i) {
+            var element = elements[i];
+            var name = element.name;
+            var value = element.value;
+
+            if (name) {
+                obj[name] = value;
+            }
+        }
+
+        return JSON.stringify(obj);
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.resetComplete, self._onResetComplete);
+        this.refs.code.value = riot.state.resetPassword.code;
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+        riot.state.resetPassword.status = {
+            errors: null
+        };
+    });
+
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.resetComplete, self._onResetComplete);
+    });
+
+    self._onResetComplete = function () {
+        self.status.errors = riot.state.resetPassword.status.errors;
+        self.update();
+    };
+});
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
 exports = module.exports = __webpack_require__(3)(undefined);
 // imports
 
@@ -7568,7 +7718,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7582,7 +7732,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -7757,7 +7907,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8243,7 +8393,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8381,12 +8531,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(30);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -8738,7 +8888,7 @@ route.parser();
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -8764,13 +8914,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(27);
+var content = __webpack_require__(28);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -8795,7 +8945,7 @@ if(false) {
 }
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports) {
 
 
@@ -8890,7 +9040,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports) {
 
 (function(self) {

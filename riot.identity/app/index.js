@@ -20,6 +20,7 @@ riot.state.sidebar = {
 riot.state.account = {};
 riot.state.login = {};
 riot.state.forgot = {};
+riot.state.resetPassword = {};
 riot.state.register = {};
 
 // Add the mixings

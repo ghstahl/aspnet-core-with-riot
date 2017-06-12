@@ -82,7 +82,7 @@ namespace TheWebApp.Controllers
         }
 
         //
-        // POST: /Account/ForgotPassword
+        // POST: /Account/ForgotPasswordJson
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -104,7 +104,10 @@ namespace TheWebApp.Controllers
                 // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
                 // Send an email with this link
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                ///RiotAccount#account/reset-password?userid=a@a.com&code=abcd
+                var callbackUrl = Url.Action("", "RiotAccount", new {  }, protocol: HttpContext.Request.Scheme);
+                callbackUrl += $"#account/reset-password?userid={user.Id}&code={code}";
+            //    var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
                 await _emailSender.SendEmailAsync(model.Email, "Reset Password",
                    $"Please reset your password by clicking here: <a href='{callbackUrl}&'>link</a>");
                 response.status.ok = true;
@@ -159,7 +162,42 @@ namespace TheWebApp.Controllers
             // If we got this far, something failed, redisplay form
             return Json(response);
         }
+        //
+        // POST: /Account/ResetPasswordJson
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPasswordJson([FromBody]ResetPasswordViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
 
+            if (!ModelState.IsValid)
+            {
+                return Json(response);
+            }
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                response.status.ok = true;
+                // Don't reveal that the user does not exist
+                return Json(response);
+            }
+            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            if (result.Succeeded)
+            {
+                response.status.ok = true;
+                return Json(response);
+            }
+            dynamic errors = new List<dynamic>();
+            foreach (var error in result.Errors)
+            {
+                errors.Add(error.Description);
+            }
+            response.status.errors = errors;
+            return Json(response);
+        }
         //
         // POST: /Account/Login
         [HttpPost]

@@ -5,6 +5,7 @@ import './pages/projects.tag';
 import './pages/error.tag';
 import './pages/forgot.tag';
 import './pages/forgot-confirmation.tag';
+import './pages/reset-password.tag';
 
 export default class RouteContributer {
   constructor() {
@@ -23,6 +24,7 @@ export default class RouteContributer {
     s.add('register');
     s.add('forgot');
     s.add('forgot-confirmation');
+    s.add('reset-password');
 
     s.add('projects');
 
@@ -50,6 +52,20 @@ export default class RouteContributer {
       let view = 'register';
 
       riot.state.account.returnUrl = decodeURIComponent(returnUrl);
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+
+    // http://localhost:41749/riotaccount#account/reset-password?userid={id}&code={code}&
+    r('/account/reset-password..', function () {
+      let q = riot.route.query();
+      let userid = q.userid;
+      let code = q.code;
+      let view = 'reset-password';
+
+      console.log('/account/reset-password..:', userid, code);
+
+      riot.state.resetPassword.userid = userid;
+      riot.state.resetPassword.code = code;
       riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
     });
 
