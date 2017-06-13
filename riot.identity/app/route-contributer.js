@@ -6,6 +6,7 @@ import './pages/error.tag';
 import './pages/forgot.tag';
 import './pages/forgot-confirmation.tag';
 import './pages/reset-password.tag';
+import './pages/send-verification-code.tag';
 
 export default class RouteContributer {
   constructor() {
@@ -25,6 +26,7 @@ export default class RouteContributer {
     s.add('forgot');
     s.add('forgot-confirmation');
     s.add('reset-password');
+    s.add('send-verification-code');
 
     s.add('projects');
 

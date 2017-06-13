@@ -46,6 +46,8 @@
           { title: 'Register as a new user?', route: '/account/register'},
           { title: 'Forgot your password?', route: '/account/forgot'}
       ];
+ 
+    self.submitTrigger = riot.EVT.accountStore.in.login;
     self.onSubmit = (e) =>{
         let myForm = $('#myForm');
         let data = self.toJSONString(myForm[0]);
@@ -54,7 +56,7 @@
         if(!disabled) {
             console.log('valid');
             e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.login,data);
+            riot.control.trigger(self.submitTrigger,data);
 
         }else{
             console.log('invalid');

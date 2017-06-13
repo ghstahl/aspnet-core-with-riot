@@ -22,6 +22,7 @@ riot.state.login = {};
 riot.state.forgot = {};
 riot.state.resetPassword = {};
 riot.state.register = {};
+riot.state.verificationCode = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

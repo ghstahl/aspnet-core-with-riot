@@ -12,13 +12,16 @@ Constants.WELLKNOWN_EVENTS = {
     reset: Constants.NAMESPACE + 'reset',
     resetResult: Constants.NAMESPACE + 'reset-result',
     register: Constants.NAMESPACE + 'register',
-    registerResult: Constants.NAMESPACE + 'register-result'
+    registerResult: Constants.NAMESPACE + 'register-result',
+    sendVerificationCode: Constants.NAMESPACE + 'send-verification-code',
+    sendVerificationCodeResult: Constants.NAMESPACE + 'send-verification-code-result'
   },
   out: {
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
-    registerComplete: Constants.NAMESPACE + 'register-complete'
+    registerComplete: Constants.NAMESPACE + 'register-complete',
+    sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete'
   }
 };
 DeepFreeze.freeze(Constants);
@@ -45,6 +48,8 @@ export default class AccountStore {
       this.on(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
       this.on(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
+      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
       this._bound = !this._bound;
     }
   }
@@ -58,6 +63,8 @@ export default class AccountStore {
       this.off(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
       this.off(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
+      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
       this._bound = !this._bound;
     }
   }
@@ -147,7 +154,6 @@ export default class AccountStore {
   _onReset(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.reset, body);
 
-    riot.state.register = {status: {}};
     let url = '/Account/ResetPasswordJson';
     let myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.resetResult
@@ -167,6 +173,27 @@ export default class AccountStore {
         riot.state.resetPassword.status = result.json.status;
         this.trigger(Constants.WELLKNOWN_EVENTS.out.resetComplete);
       }
+    }
+  }
+
+  _onSendVerificationCode(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, body);
+
+    riot.state.verificationCode = {};
+    let url = '/Account/SendCodeJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.resetResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
+  }
+  _onSendVerificationCodeResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'sendVerificationCode1234'});
+    } else {
+      riot.state.verificationCode.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.sendVerificationCodeComplete);
     }
   }
 }
