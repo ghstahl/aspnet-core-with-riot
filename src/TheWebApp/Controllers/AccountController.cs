@@ -10,16 +10,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using TheWebApp.Models;
 using TheWebApp.Models.AccountViewModels;
 using TheWebApp.Services;
 
 namespace TheWebApp.Controllers
 {
+
+    class LoginResultModel
+    {
+        public LoginResultModel()
+        {
+            Status = new Dictionary<string, object>(); 
+        }
+        public Dictionary<string, object> Status;
+    }
     [Authorize]
     public class AccountController : Controller
     {
+        private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
@@ -41,20 +53,12 @@ namespace TheWebApp.Controllers
             _emailSender = emailSender;
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<AccountController>();
+            _jsonSerializerSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
         }
 
-        //
-        // GET: /Account/Login
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> Login(string returnUrl = null)
-        {
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
-
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
         //
         // POST: /Account/LoginJson
         [HttpPost]
@@ -62,8 +66,7 @@ namespace TheWebApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> LoginJson([FromBody]LoginViewModel model)
         {
-            dynamic response = JObject.Parse("{status:{}}");
-            response.status.ok = false;
+            var response = new LoginResultModel {Status = {["ok"] = false}};
             if (ModelState.IsValid)
             {
                 // This doesn't count login failures towards account lockout
@@ -71,14 +74,23 @@ namespace TheWebApp.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    response.status.ok = true;
+                    response.Status["ok"] = true;
                     _logger.LogInformation(1, "User logged in.");
-                    return Json(response);
                 }
-                response.status.requiresTwoFactor = result.RequiresTwoFactor;
-                response.status.isLockedOut = result.IsLockedOut;
+                response.Status["requiresTwoFactor"] = result.RequiresTwoFactor;
+                if (result.RequiresTwoFactor)
+                {
+                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    var userFactors = await _userManager.GetValidTwoFactorProvidersAsync(user);
+                    var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
+                    response.Status["factorOptions"] = factorOptions;
+                }
+                
+                response.Status["isLockedOut"] = result.IsLockedOut;
+
             }
-            return Json(response);
+            var jResponse = Json(response, _jsonSerializerSettings);
+            return jResponse;
         }
 
         //
@@ -104,7 +116,7 @@ namespace TheWebApp.Controllers
                 // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
                 // Send an email with this link
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                ///RiotAccount#account/reset-password?userid=a@a.com&code=abcd
+                //  RiotAccount#account/reset-password?userid=a@a.com&code=abcd
                 var callbackUrl = Url.Action("", "RiotAccount", new {  }, protocol: HttpContext.Request.Scheme);
                 callbackUrl += $"#account/reset-password?userid={user.Id}&code={code}";
             //    var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
@@ -162,6 +174,7 @@ namespace TheWebApp.Controllers
             // If we got this far, something failed, redisplay form
             return Json(response);
         }
+
         //
         // POST: /Account/ResetPasswordJson
         [HttpPost]
@@ -197,6 +210,101 @@ namespace TheWebApp.Controllers
             }
             response.status.errors = errors;
             return Json(response);
+        }
+
+        //
+        // POST: /Account/SendCodeJson
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> SendCodeJson([FromBody]SendCodeViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+
+            if (!ModelState.IsValid)
+            {
+                return Json(response);
+            }
+
+            var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+            if (user == null)
+            {
+                return Json(response);
+            }
+
+            // Generate the token and send it
+            var code = await _userManager.GenerateTwoFactorTokenAsync(user, model.SelectedProvider);
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Json(response);
+            }
+
+            var message = "Your security code is: " + code;
+            if (model.SelectedProvider == "Email")
+            {
+                await _emailSender.SendEmailAsync(await _userManager.GetEmailAsync(user), "Security Code", message);
+            }
+            else if (model.SelectedProvider == "Phone")
+            {
+                await _smsSender.SendSmsAsync(await _userManager.GetPhoneNumberAsync(user), message);
+            }
+            response.status.ok = true;
+            return Json(response);
+        }
+
+        //
+        // POST: /Account/VerifyCodeJson
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> VerifyCodeJson([FromBody]VerifyCodeViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+
+            if (!ModelState.IsValid)
+            {
+                return Json(response);
+            }
+
+            // The following code protects for brute force attacks against the two factor codes.
+            // If a user enters incorrect codes for a specified amount of time then the user account
+            // will be locked out for a specified amount of time.
+            var result = await _signInManager.TwoFactorSignInAsync(model.Provider, model.Code, model.RememberMe, model.RememberBrowser);
+            if (result.Succeeded)
+            {
+                response.status.ok = true;
+            }
+            response.status.IsLockedOut = result.IsLockedOut;
+            if (result.IsLockedOut)
+            {
+                _logger.LogWarning(7, "User account locked out.");
+            }
+            else
+            {
+                dynamic errors = new List<dynamic>
+                {
+                    "Invalid code."
+                };
+                response.status.errors = errors;
+            }
+            return Json(response);
+        }
+
+        //
+        // GET: /Account/Login
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login(string returnUrl = null)
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
         }
         //
         // POST: /Account/Login

@@ -2860,6 +2860,19 @@ Object.defineProperty(exports, '__esModule', { value: true });
 "use strict";
 
 
+var riot = __webpack_require__(0);
+riot.tag2('validation-summary', '<div if="{this.status.errors}" class="text-danger validation-summary-errors"> <ul> <li each="{error in status.errors}">{error}</li> </ul> </div>', '', '', function (opts) {
+    var self = this;
+    self.status = self.opts.status;
+});
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -2889,19 +2902,6 @@ var DeepFreeze = function () {
 }();
 
 exports.default = DeepFreeze;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var riot = __webpack_require__(0);
-riot.tag2('validation-summary', '<div if="{this.status.errors}" class="text-danger validation-summary-errors"> <ul> <li each="{error in status.errors}">{error}</li> </ul> </div>', '', '', function (opts) {
-    var self = this;
-    self.status = self.opts.status;
-});
 
 /***/ }),
 /* 3 */
@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(36);
+var	fixUrls = __webpack_require__(38);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3436,7 +3436,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _deepFreeze = __webpack_require__(1);
+var _deepFreeze = __webpack_require__(2);
 
 var _deepFreeze2 = _interopRequireDefault(_deepFreeze);
 
@@ -3452,6 +3452,7 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    redirect: Constants.NAMESPACE + 'redirect',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
     forgot: Constants.NAMESPACE + 'forgot',
@@ -3459,13 +3460,19 @@ Constants.WELLKNOWN_EVENTS = {
     reset: Constants.NAMESPACE + 'reset',
     resetResult: Constants.NAMESPACE + 'reset-result',
     register: Constants.NAMESPACE + 'register',
-    registerResult: Constants.NAMESPACE + 'register-result'
+    registerResult: Constants.NAMESPACE + 'register-result',
+    sendVerificationCode: Constants.NAMESPACE + 'send-verification-code',
+    sendVerificationCodeResult: Constants.NAMESPACE + 'send-verification-code-result',
+    verifyCode: Constants.NAMESPACE + 'verifyCode',
+    verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
-    registerComplete: Constants.NAMESPACE + 'register-complete'
+    registerComplete: Constants.NAMESPACE + 'register-complete',
+    sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete',
+    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete'
   }
 };
 _deepFreeze2.default.freeze(Constants);
@@ -3490,6 +3497,7 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -3498,12 +3506,17 @@ var AccountStore = function () {
       this.on(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
       this.on(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
+      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
       this._bound = !this._bound;
     }
   };
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -3512,8 +3525,16 @@ var AccountStore = function () {
       this.off(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
       this.off(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
+      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
       this._bound = !this._bound;
     }
+  };
+
+  AccountStore.prototype._onRedirect = function _onRedirect(url) {
+    window.$(location).attr('href', url);
   };
 
   AccountStore.prototype._redirect = function _redirect() {
@@ -3523,7 +3544,7 @@ var AccountStore = function () {
       returnUrl = riot.state.account.returnUrl;
     }
     riot.state.account.returnUrl = undefined;
-    window.$(location).attr('href', returnUrl);
+    this._onRedirect(returnUrl);
   };
 
   AccountStore.prototype._onLogin = function _onLogin(body) {
@@ -3603,7 +3624,6 @@ var AccountStore = function () {
   AccountStore.prototype._onReset = function _onReset(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.reset, body);
 
-    riot.state.register = { status: {} };
     var url = '/Account/ResetPasswordJson';
     var myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.resetResult
@@ -3627,6 +3647,50 @@ var AccountStore = function () {
     }
   };
 
+  AccountStore.prototype._onSendVerificationCode = function _onSendVerificationCode(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, body);
+
+    riot.state.verificationCode = {};
+    var url = '/Account/SendCodeJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onSendVerificationCodeResult = function _onSendVerificationCodeResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'sendVerificationCode1234' });
+    } else {
+      riot.state.verificationCode.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.sendVerificationCodeComplete);
+    }
+  };
+
+  AccountStore.prototype._onVerifyCode = function _onVerifyCode(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCode, body);
+
+    riot.state.verifyCode = {};
+    var url = '/Account/SendCodeJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.verifyCodeResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onVerifyCodeResult = function _onVerifyCodeResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'verifyCode-1234' });
+    } else {
+      riot.state.verifyCode.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
+    }
+  };
+
   return AccountStore;
 }();
 
@@ -3646,7 +3710,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _deepFreeze = __webpack_require__(1);
+var _deepFreeze = __webpack_require__(2);
 
 var _deepFreeze2 = _interopRequireDefault(_deepFreeze);
 
@@ -3746,7 +3810,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _deepFreeze = __webpack_require__(1);
+var _deepFreeze = __webpack_require__(2);
 
 var _deepFreeze2 = _interopRequireDefault(_deepFreeze);
 
@@ -4422,7 +4486,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(30), __webpack_require__(33), __webpack_require__(34), __webpack_require__(37));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(32), __webpack_require__(35), __webpack_require__(36), __webpack_require__(39));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7046,7 +7110,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(28);
+var content = __webpack_require__(30);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7125,6 +7189,8 @@ riot.state.login = {};
 riot.state.forgot = {};
 riot.state.resetPassword = {};
 riot.state.register = {};
+riot.state.verificationCode = {};
+riot.state.verifyCode = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7176,6 +7242,10 @@ __webpack_require__(22);
 
 __webpack_require__(27);
 
+__webpack_require__(28);
+
+__webpack_require__(29);
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var RouteContributer = function () {
@@ -7198,6 +7268,8 @@ var RouteContributer = function () {
     s.add('forgot');
     s.add('forgot-confirmation');
     s.add('reset-password');
+    s.add('send-verification-code');
+    s.add('verify-code');
 
     s.add('projects');
 
@@ -7309,11 +7381,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(31);
+var _nprogress = __webpack_require__(33);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(35);
+__webpack_require__(37);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7429,7 +7501,7 @@ riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Ple
 "use strict";
 
 
-__webpack_require__(2);
+__webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
@@ -7487,6 +7559,8 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
     self.mixin("forms-mixin");
     self.name = 'home';
     self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
+
+    self.submitTrigger = riot.EVT.accountStore.in.login;
     self.onSubmit = function (e) {
         var myForm = $('#myForm');
         var data = self.toJSONString(myForm[0]);
@@ -7495,7 +7569,7 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
         if (!disabled) {
             console.log('valid');
             e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.login, data);
+            riot.control.trigger(self.submitTrigger, data);
         } else {
             console.log('invalid');
         }
@@ -7505,12 +7579,33 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
     };
 
     self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
         self.q = riot.route.query();
     });
-    self.on('unmount', function () {});
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
+    });
+    self._onLoginComplete = function () {
+        if (riot.state.login.status.ok) {
+            var returnUrl = '/';
+            if (riot.state.account.returnUrl) {
+                returnUrl = riot.state.account.returnUrl;
+            }
+            riot.state.account.returnUrl = undefined;
+            riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
+        } else {
+            if (riot.state.login.status.requiresTwoFactor) {
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/send-verification-code');
+            } else if (riot.state.login.status.isLockedOut) {
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/locked-out');
+            } else {
+                riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'login-143523' });
+            }
+        }
+    };
 
     self.generateAnError = function () {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
@@ -7593,7 +7688,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 "use strict";
 
 
-__webpack_require__(2);
+__webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
@@ -7650,7 +7745,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 "use strict";
 
 
-__webpack_require__(2);
+__webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
@@ -7705,6 +7800,139 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 /* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <input type="hidden" data-val="true" data-val-required="" id="RememberMe" name="RememberMe" value="False"> <label for="inputEmail" class="control-label">Select Two-Factor Authentication Provider:</label> <select class="form-control" id="SelectedProvider" name="SelectedProvider"> <option each="{factorOptions}" if="{!this.disabled}" riot-value="{this.value}">{this.text}</option> </select> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'send-verification-code';
+    self.factorOptions = [];
+    self.submitTrigger = riot.EVT.accountStore.in.sendVerificationCode;
+
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(self.submitTrigger, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+    self.on('before-mount', function () {
+        self.factorOptions = riot.state.login.status.factorOptions;
+        riot.state.verificationCode = {};
+    });
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.sendVerificationCodeComplete, self._onSendVerificationCodeComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+    });
+
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.sendVerificationCodeComplete, self._onSendVerificationCodeComplete);
+    });
+
+    self._onSendVerificationCodeComplete = function () {
+        self.status = riot.state.verificationCode.status;
+        if (self.status.ok) {
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/verify-code');
+        } else {
+            riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'sendVerificationCode-143523' });
+        }
+    };
+});
+
+/***/ }),
+/* 29 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="Code" class="control-label">Code</label> <input class="form-control" name="Code" type="text" id="Code" data-error="The Code field is required." required> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'verify-code';
+    self.status = {};
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.verifyCode, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.verifyCodeComplete, self._onVerifyCodeComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+        riot.state.register = {
+            status: {
+                errors: null
+            }
+        };
+    });
+
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.verifyCodeComplete, self._onVerifyCodeComplete);
+    });
+
+    self._onVerifyCodeComplete = function () {
+        self.status = riot.state.verifyCode.status;
+        self.update();
+        if (self.status.ok) {
+            var returnUrl = '/';
+            if (riot.state.account.returnUrl) {
+                returnUrl = riot.state.account.returnUrl;
+            }
+            riot.state.account.returnUrl = undefined;
+            riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
+        } else {
+            if (self.status.IsLockedOut) {
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/locked-out');
+            }
+        }
+    };
+
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+    };
+});
+
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
 exports = module.exports = __webpack_require__(3)(undefined);
 // imports
 
@@ -7716,7 +7944,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 29 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7730,7 +7958,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 30 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -7905,7 +8133,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 31 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8391,7 +8619,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 32 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8529,12 +8757,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 33 */
+/* 35 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(32);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(34);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -8886,7 +9114,7 @@ route.parser();
 
 
 /***/ }),
-/* 34 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -8912,13 +9140,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(29);
+var content = __webpack_require__(31);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -8943,7 +9171,7 @@ if(false) {
 }
 
 /***/ }),
-/* 36 */
+/* 38 */
 /***/ (function(module, exports) {
 
 
@@ -9038,7 +9266,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 37 */
+/* 39 */
 /***/ (function(module, exports) {
 
 (function(self) {

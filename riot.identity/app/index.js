@@ -23,6 +23,7 @@ riot.state.forgot = {};
 riot.state.resetPassword = {};
 riot.state.register = {};
 riot.state.verificationCode = {};
+riot.state.verifyCode = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

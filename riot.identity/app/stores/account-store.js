@@ -5,6 +5,7 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    redirect: Constants.NAMESPACE + 'redirect',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
     forgot: Constants.NAMESPACE + 'forgot',
@@ -14,14 +15,17 @@ Constants.WELLKNOWN_EVENTS = {
     register: Constants.NAMESPACE + 'register',
     registerResult: Constants.NAMESPACE + 'register-result',
     sendVerificationCode: Constants.NAMESPACE + 'send-verification-code',
-    sendVerificationCodeResult: Constants.NAMESPACE + 'send-verification-code-result'
+    sendVerificationCodeResult: Constants.NAMESPACE + 'send-verification-code-result',
+    verifyCode: Constants.NAMESPACE + 'verifyCode',
+    verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
     registerComplete: Constants.NAMESPACE + 'register-complete',
-    sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete'
+    sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete',
+    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete'
   }
 };
 DeepFreeze.freeze(Constants);
@@ -40,6 +44,7 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -50,11 +55,14 @@ export default class AccountStore {
       this.on(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
       this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
       this._bound = !this._bound;
     }
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -65,8 +73,14 @@ export default class AccountStore {
       this.off(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
       this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
       this._bound = !this._bound;
     }
+  }
+
+  _onRedirect(url) {
+    window.$(location).attr('href', url);
   }
 
   _redirect() {
@@ -76,7 +90,7 @@ export default class AccountStore {
       returnUrl = riot.state.account.returnUrl;
     }
     riot.state.account.returnUrl = undefined;
-    window.$(location).attr('href', returnUrl);
+    this._onRedirect(returnUrl);
   }
 
   _onLogin(body) {
@@ -137,6 +151,7 @@ export default class AccountStore {
 
     riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
   }
+
   _onRegisterResult(result, ack) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.registerResult, result, ack);
     if (result.error || !result.response.ok) {
@@ -151,6 +166,7 @@ export default class AccountStore {
       }
     }
   }
+
   _onReset(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.reset, body);
 
@@ -161,6 +177,7 @@ export default class AccountStore {
 
     riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
   }
+
   _onResetResult(result, ack) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.resetResult, result, ack);
     if (result.error || !result.response.ok) {
@@ -182,11 +199,12 @@ export default class AccountStore {
     riot.state.verificationCode = {};
     let url = '/Account/SendCodeJson';
     let myAck = {
-      evt: Constants.WELLKNOWN_EVENTS.in.resetResult
+      evt: Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult
     };
 
     riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
   }
+
   _onSendVerificationCodeResult(result, ack) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, result, ack);
     if (result.error || !result.response.ok) {
@@ -194,6 +212,27 @@ export default class AccountStore {
     } else {
       riot.state.verificationCode.status = result.json.status;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.sendVerificationCodeComplete);
+    }
+  }
+  _onVerifyCode(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCode, body);
+
+    riot.state.verifyCode = {};
+    let url = '/Account/VerifyCodeJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.verifyCodeResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
+  }
+
+  _onVerifyCodeResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'verifyCode-1234'});
+    } else {
+      riot.state.verifyCode.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
     }
   }
 }

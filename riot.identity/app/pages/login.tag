@@ -67,6 +67,8 @@
       };
 
 	self.on('mount', function() {
+        riot.control.on(riot.EVT.accountStore.out.loginComplete,
+            self._onLoginComplete);
         let myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
@@ -74,8 +76,27 @@
     
     })
 	self.on('unmount', function() {
-    	
+        riot.control.off(riot.EVT.accountStore.out.loginComplete,
+            self._onLoginComplete);
     })
+    self._onLoginComplete = () => {
+        if(riot.state.login.status.ok){
+            let returnUrl = '/';
+            if (riot.state.account.returnUrl) {
+              returnUrl = riot.state.account.returnUrl;
+            }
+            riot.state.account.returnUrl = undefined;
+            riot.control.trigger(riot.EVT.accountStore.in.redirect,returnUrl);
+        }else{
+            if(riot.state.login.status.requiresTwoFactor){
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/send-verification-code');
+            }else if(riot.state.login.status.isLockedOut){   
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/locked-out');
+            }else{
+                riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'login-143523'});
+            }
+        }
+    };
 
 	self.generateAnError = () => {
   		riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
