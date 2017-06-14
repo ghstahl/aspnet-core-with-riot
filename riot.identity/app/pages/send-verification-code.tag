@@ -8,7 +8,8 @@ import '../components/validation-summary.tag'
     <hr /> 
     <div class="form-group">
     	<validation-summary status={ status }></validation-summary>
-        <input type="hidden" data-val="true" data-val-required="" id="RememberMe" name="RememberMe" value="False" />
+        <input type="hidden" data-val="true" data-val-required="" 
+                id="RememberMe" name="RememberMe" value="{rememberMe}" />
         <label for="inputEmail" class="control-label">Select Two-Factor Authentication Provider:</label>
 		<select class="form-control"
 				id="SelectedProvider" 
@@ -53,6 +54,7 @@ import '../components/validation-summary.tag'
       };
     self.on('before-mount', () =>{
         self.factorOptions = riot.state.login.status.factorOptions;
+        self.rememberMe = riot.state.login.status.rememberMe;
         riot.state.verificationCode = {};
     });
 	self.on('mount', function() {  

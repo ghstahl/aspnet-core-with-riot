@@ -109,13 +109,8 @@ export default class AccountStore {
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'login1234'});
     } else {
-      if (result.json.status.ok) {
-        riot.state.login = {};
-        this._redirect();
-      } else {
-        riot.state.login.status = result.json.status;
-        this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
-      }
+      riot.state.login.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
     }
   }
 

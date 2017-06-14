@@ -3563,13 +3563,8 @@ var AccountStore = function () {
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'login1234' });
     } else {
-      if (result.json.status.ok) {
-        riot.state.login = {};
-        this._redirect();
-      } else {
-        riot.state.login.status = result.json.status;
-        this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
-      }
+      riot.state.login.status = result.json.status;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.loginComplete);
     }
   };
 
@@ -3673,7 +3668,7 @@ var AccountStore = function () {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCode, body);
 
     riot.state.verifyCode = {};
-    var url = '/Account/SendCodeJson';
+    var url = '/Account/VerifyCodeJson';
     var myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.verifyCodeResult
     };
@@ -6655,32 +6650,22 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Validator = function () {
-  function Validator() {
-    _classCallCheck(this, Validator);
-  }
-
-  Validator.validateType = function validateType(obj, type, name) {
-    if (!obj) {
-      throw new Error(name + ': is NULL');
+Object.defineProperty(exports, "__esModule", { value: true });
+var Validator = (function () {
+    function Validator() {
     }
-    if (!(obj instanceof type)) {
-      throw new Error(name + ': is NOT of type:' + type.name);
-    }
-  };
-
-  return Validator;
-}();
-
+    Validator.validateType = function (obj, type, name) {
+        if (!obj) {
+            throw new Error(name + ': is NULL');
+        }
+        if (!(obj instanceof type)) {
+            throw new Error(name + ': is NOT of type:' + type.name);
+        }
+    };
+    return Validator;
+}());
 exports.default = Validator;
-module.exports = exports['default'];
+
 
 /***/ }),
 /* 16 */
@@ -6695,13 +6680,11 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension() {
+var RiotRouteExtension = function RiotRouteExtension(riot) {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
-  self.name = 'RiotRouteExtension';
-  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6805,61 +6788,6 @@ module.exports = exports['default'];
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var RandomString = function RandomString() {
-  _classCallCheck(this, RandomString);
-
-  var self = this;
-
-  self.name = 'RandomString';
-  self.namespace = self.name + ':';
-  self.generateRandomString = function (length) {
-    if (length && length > 16) {
-      length = 16;
-    } else {
-      length = 16;
-    }
-
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-  self.hashString = function (str) {
-    var hash = 5381;
-    var i = str.length;
-
-    while (i) {
-      hash = hash * 33 ^ str.charCodeAt(--i);
-    }
-    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-    * integers. Since we want the results to be always positive, convert the
-    * signed int to an unsigned by doing an unsigned bitshift. */
-    return hash >>> 0;
-  };
-  self.randomHash = function (length) {
-    return self.hashString(self.generateRandomString(length));
-  };
-};
-
-exports.default = RandomString;
-module.exports = exports['default'];
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -6906,6 +6834,49 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var RandomString = (function () {
+    function RandomString() {
+    }
+    RandomString.prototype.generateRandomString = function (length) {
+        if (length && length > 16) {
+            length = 16;
+        }
+        else {
+            length = 16;
+        }
+        var text = '';
+        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    };
+    RandomString.prototype.hashString = function (str) {
+        var hash = 5381;
+        var i = str.length;
+        while (i) {
+            hash = (hash * 33) ^ str.charCodeAt(--i);
+        }
+        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+        * integers. Since we want the results to be always positive, convert the
+        * signed int to an unsigned by doing an unsigned bitshift. */
+        return hash >>> 0;
+    };
+    RandomString.prototype.randomHash = function (str) {
+        return this.hashString(this.generateRandomString(length));
+    };
+    return RandomString;
+}());
+exports.default = RandomString;
+
+
+/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -6950,7 +6921,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(18);
+var _randomString = __webpack_require__(19);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7010,7 +6981,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(19);
+__webpack_require__(18);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7023,7 +6994,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default();
+    this._masterEventTable = new _masterEventTable2.default(riot);
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7047,7 +7018,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default();
+    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7554,11 +7525,12 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 
 
 var riot = __webpack_require__(0);
-riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
+riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <input type="hidden" data-val="true" data-val-required="" id="returnUrl" name="ReturnUrl" riot-value="{returnUrl}"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberMe}" type="checkbox" id="rememberMe" name="RememberMe" riot-value="{rememberMe}"> Remember me. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
     var self = this;
     self.mixin("forms-mixin");
     self.name = 'home';
-    self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
+    self.rememberMe = false;
+    self.returnUrl = self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
 
     self.submitTrigger = riot.EVT.accountStore.in.login;
     self.onSubmit = function (e) {
@@ -7578,6 +7550,19 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
     };
 
+    self.onRememberMe = function (evt) {
+        self.rememberMe = !self.rememberMe;
+        self.update();
+    };
+    self.on('before-mount', function () {
+        riot.state.returnUrl = '%2F';
+        var q = riot.route.query();
+        if (q.returnurl) {
+            riot.state.returnUrl = q.returnurl;
+        }
+        riot.state.returnUrl = decodeURIComponent(riot.state.returnUrl);
+    });
+
     self.on('mount', function () {
         riot.control.on(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
         var myForm = $('#myForm');
@@ -7585,16 +7570,18 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
         myForm.on('submit', self.onSubmit);
         self.q = riot.route.query();
     });
+
     self.on('unmount', function () {
         riot.control.off(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
     });
+
     self._onLoginComplete = function () {
         if (riot.state.login.status.ok) {
             var returnUrl = '/';
-            if (riot.state.account.returnUrl) {
-                returnUrl = riot.state.account.returnUrl;
+            if (riot.state.returnUrl) {
+                returnUrl = riot.state.returnUrl;
             }
-            riot.state.account.returnUrl = undefined;
+            riot.state.returnUrl = undefined;
             riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
         } else {
             if (riot.state.login.status.requiresTwoFactor) {
@@ -7807,7 +7794,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <input type="hidden" data-val="true" data-val-required="" id="RememberMe" name="RememberMe" value="False"> <label for="inputEmail" class="control-label">Select Two-Factor Authentication Provider:</label> <select class="form-control" id="SelectedProvider" name="SelectedProvider"> <option each="{factorOptions}" if="{!this.disabled}" riot-value="{this.value}">{this.text}</option> </select> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <input type="hidden" data-val="true" data-val-required="" id="RememberMe" name="RememberMe" riot-value="{rememberMe}"> <label for="inputEmail" class="control-label">Select Two-Factor Authentication Provider:</label> <select class="form-control" id="SelectedProvider" name="SelectedProvider"> <option each="{factorOptions}" if="{!this.disabled}" riot-value="{this.value}">{this.text}</option> </select> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
     var self = this;
     self.mixin("forms-mixin");
     self.name = 'send-verification-code';
@@ -7833,6 +7820,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
     };
     self.on('before-mount', function () {
         self.factorOptions = riot.state.login.status.factorOptions;
+        self.rememberMe = riot.state.login.status.rememberMe;
         riot.state.verificationCode = {};
     });
     self.on('mount', function () {
@@ -7868,11 +7856,14 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="Code" class="control-label">Code</label> <input class="form-control" name="Code" type="text" id="Code" data-error="The Code field is required." required> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <input type="hidden" data-val="true" data-val-required="" id="RememberMe" name="RememberMe" riot-value="{rememberMe}"> <input type="hidden" data-val="true" data-val-required="" id="Provider" name="Provider" riot-value="{provider}"> <validation-summary status="{status}"></validation-summary> <label for="Code" class="control-label">Code</label> <input class="form-control" name="Code" type="text" id="Code" data-error="The Code field is required." required> <div class="help-block with-errors"></div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberBrowser}" type="checkbox" id="rememberBrowser" name="RememberBrowser" riot-value="{rememberBrowser}"> Remember this browser. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
     var self = this;
     self.mixin("forms-mixin");
     self.name = 'verify-code';
+    self.rememberBrowser = false;
+    self.rememberMe = false;
     self.status = {};
+
     self.onSubmit = function (e) {
         var myForm = $('#myForm');
         var data = self.toJSONString(myForm[0]);
@@ -7890,6 +7881,14 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
     };
 
+    self.on('before-mount', function () {
+        self.provider = riot.state.verificationCode.status.provider;
+        self.rememberMe = riot.state.verificationCode.status.rememberMe;
+    });
+    self.onRememberBrowser = function (evt) {
+        self.rememberBrowser = !self.rememberBrowser;
+        self.update();
+    };
     self.on('mount', function () {
         riot.control.on(riot.EVT.accountStore.out.verifyCodeComplete, self._onVerifyCodeComplete);
 
@@ -7912,10 +7911,10 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
         self.update();
         if (self.status.ok) {
             var returnUrl = '/';
-            if (riot.state.account.returnUrl) {
-                returnUrl = riot.state.account.returnUrl;
+            if (riot.state.returnUrl) {
+                returnUrl = riot.state.returnUrl;
             }
-            riot.state.account.returnUrl = undefined;
+            riot.state.returnUrl = undefined;
             riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
         } else {
             if (self.status.IsLockedOut) {

@@ -5,7 +5,12 @@ import '../components/validation-summary.tag'
 <form id="myForm" data-toggle="validator" role="form">
     <hr /> 
     <div class="form-group">
-    	<validation-summary status={ status }></validation-summary>
+        <input type="hidden" data-val="true" data-val-required="" 
+                    id="RememberMe" name="RememberMe" value="{rememberMe}" />
+        <input type="hidden" 
+            data-val="true" data-val-required="" id="Provider" 
+                            name="Provider" value="{provider}" />    	
+        <validation-summary status={ status }></validation-summary>
         <label for="Code" class="control-label">Code</label>
         <input 	class="form-control" 
         		name="Code" 
@@ -15,7 +20,15 @@ import '../components/validation-summary.tag'
         		required>
         <div class="help-block with-errors"></div>
     </div>
-   
+    <div class="form-group">
+        <div class="checkbox">
+          <label>
+            <input onclick={ onRememberBrowser } type="checkbox" id="rememberBrowser" name="RememberBrowser" value="{rememberBrowser}" >
+            Remember this browser.
+          </label>
+          <div class="help-block with-errors"></div>
+        </div>
+    </div>
     <div class="form-group">
       <button id="submitButton" type="submit" class="btn btn-primary">Submit</button>
     </div>
@@ -27,8 +40,10 @@ import '../components/validation-summary.tag'
 	var self = this;
     self.mixin("forms-mixin");
 	self.name = 'verify-code';
-	self.status = {
-        };
+    self.rememberBrowser = false;
+    self.rememberMe = false;
+	self.status = {};
+
     self.onSubmit = (e) =>{
         let myForm = $('#myForm');
         let data = self.toJSONString(myForm[0]);
@@ -46,7 +61,15 @@ import '../components/validation-summary.tag'
     self.route = (evt) => {
         riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
       };
-    
+
+    self.on('before-mount', function() {
+        self.provider = riot.state.verificationCode.status.provider;
+        self.rememberMe = riot.state.verificationCode.status.rememberMe;
+    })
+    self.onRememberBrowser = (evt) =>{
+        self.rememberBrowser = !self.rememberBrowser;
+        self.update();
+    }
 	self.on('mount', function() {
 		riot.control.on(riot.EVT.accountStore.out.verifyCodeComplete,
       		self._onVerifyCodeComplete);
@@ -71,11 +94,11 @@ import '../components/validation-summary.tag'
 	    self.status = riot.state.verifyCode.status;
     	self.update();
     	if(self.status.ok){
-			let returnUrl = '/';
-            if (riot.state.account.returnUrl) {
-              returnUrl = riot.state.account.returnUrl;
+            let returnUrl = '/';
+            if (riot.state.returnUrl) {
+              returnUrl = riot.state.returnUrl;
             }
-            riot.state.account.returnUrl = undefined;
+            riot.state.returnUrl = undefined;
             riot.control.trigger(riot.EVT.accountStore.in.redirect,returnUrl);
     	}else{
     		if(self.status.IsLockedOut){

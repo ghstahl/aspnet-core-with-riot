@@ -84,6 +84,7 @@ namespace TheWebApp.Controllers
                     var userFactors = await _userManager.GetValidTwoFactorProvidersAsync(user);
                     var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
                     response.Status["factorOptions"] = factorOptions;
+                    response.Status["rememberMe"] = model.RememberMe;
                 }
                 
                 response.Status["isLockedOut"] = result.IsLockedOut;
@@ -222,7 +223,8 @@ namespace TheWebApp.Controllers
             dynamic response = new ExpandoObject();
             response.status = new ExpandoObject();
             response.status.ok = false;
-
+            response.status.provider = model.SelectedProvider;
+            response.status.rememberMe = model.RememberMe;
             if (!ModelState.IsValid)
             {
                 return Json(response);
@@ -259,7 +261,7 @@ namespace TheWebApp.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> VerifyCodeJson([FromBody]VerifyCodeViewModel model)
+        public async Task<JsonResult> VerifyCodeJson([FromBody] VerifyCodeViewModel model)
         {
             dynamic response = new ExpandoObject();
             response.status = new ExpandoObject();
@@ -273,23 +275,27 @@ namespace TheWebApp.Controllers
             // The following code protects for brute force attacks against the two factor codes.
             // If a user enters incorrect codes for a specified amount of time then the user account
             // will be locked out for a specified amount of time.
-            var result = await _signInManager.TwoFactorSignInAsync(model.Provider, model.Code, model.RememberMe, model.RememberBrowser);
+            var result = await _signInManager.TwoFactorSignInAsync(model.Provider, model.Code, model.RememberMe,
+                model.RememberBrowser);
             if (result.Succeeded)
             {
                 response.status.ok = true;
             }
-            response.status.IsLockedOut = result.IsLockedOut;
-            if (result.IsLockedOut)
-            {
-                _logger.LogWarning(7, "User account locked out.");
-            }
             else
             {
-                dynamic errors = new List<dynamic>
+                response.status.IsLockedOut = result.IsLockedOut;
+                if (result.IsLockedOut)
                 {
-                    "Invalid code."
-                };
-                response.status.errors = errors;
+                    _logger.LogWarning(7, "User account locked out.");
+                }
+                else
+                {
+                    dynamic errors = new List<dynamic>
+                    {
+                        "Invalid code."
+                    };
+                    response.status.errors = errors;
+                }
             }
             return Json(response);
         }
