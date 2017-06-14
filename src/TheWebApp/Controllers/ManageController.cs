@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,16 @@ using TheWebApp.Services;
 
 namespace TheWebApp.Controllers
 {
+    class UserInfoResultModel
+    {
+        public UserInfoResultModel()
+        {
+            Status = new Dictionary<string, object>();
+        }
+        public Dictionary<string, object> Status;
+        public IndexViewModel IndexViewModel { get; set; }
+    }
+
     [Authorize]
     public class ManageController : Controller
     {
@@ -37,6 +48,31 @@ namespace TheWebApp.Controllers
             _emailSender = emailSender;
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<ManageController>();
+        }
+
+        //
+        // GET: /Manage/InfoJson
+        [HttpGet]
+        public async Task<JsonResult> InfoJson ()
+        {
+            var response = new UserInfoResultModel { Status = { ["ok"] = false } };
+
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return Json(response);
+            }
+            var model = new IndexViewModel
+            {
+                HasPassword = await _userManager.HasPasswordAsync(user),
+                PhoneNumber = await _userManager.GetPhoneNumberAsync(user),
+                TwoFactor = await _userManager.GetTwoFactorEnabledAsync(user),
+                Logins = await _userManager.GetLoginsAsync(user),
+                BrowserRemembered = await _signInManager.IsTwoFactorClientRememberedAsync(user)
+            };
+            response.IndexViewModel = model;
+            response.Status["ok"] = true;
+            return Json(response);
         }
 
         //

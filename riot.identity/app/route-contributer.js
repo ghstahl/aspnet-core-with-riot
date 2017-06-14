@@ -8,6 +8,7 @@ import './pages/forgot-confirmation.tag';
 import './pages/reset-password.tag';
 import './pages/send-verification-code.tag';
 import './pages/verify-code.tag';
+import './pages/manage.tag';
 export default class RouteContributer {
   constructor() {
     riot.observable(this);
@@ -28,6 +29,7 @@ export default class RouteContributer {
     s.add('reset-password');
     s.add('send-verification-code');
     s.add('verify-code');
+    s.add('manage');
 
     s.add('projects');
 

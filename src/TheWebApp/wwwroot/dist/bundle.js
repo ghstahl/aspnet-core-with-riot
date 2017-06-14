@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(38);
+var	fixUrls = __webpack_require__(39);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    userManageInfo: Constants.NAMESPACE + 'user-manage-info',
+    userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
@@ -3467,6 +3469,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
@@ -3497,6 +3500,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
+      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
@@ -3516,6 +3521,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
+      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
@@ -3683,6 +3690,28 @@ var AccountStore = function () {
     } else {
       riot.state.verifyCode.status = result.json.status;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
+    }
+  };
+
+  AccountStore.prototype._onUserManageInfo = function _onUserManageInfo(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.userManageInfo, body);
+
+    riot.state.manage = {};
+    var url = '/Manage/InfoJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.userManageInfoResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, null, myAck);
+  };
+
+  AccountStore.prototype._onUserManageInfoResult = function _onUserManageInfoResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'userManageInfo-1234' });
+    } else {
+      riot.state.manage.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.userManageInfoComplete);
     }
   };
 
@@ -4481,7 +4510,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(32), __webpack_require__(35), __webpack_require__(36), __webpack_require__(39));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(33), __webpack_require__(36), __webpack_require__(37), __webpack_require__(40));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7081,7 +7110,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(30);
+var content = __webpack_require__(31);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7162,6 +7191,7 @@ riot.state.resetPassword = {};
 riot.state.register = {};
 riot.state.verificationCode = {};
 riot.state.verifyCode = {};
+riot.state.manage = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7201,9 +7231,9 @@ Object.defineProperty(exports, "__esModule", {
 
 __webpack_require__(24);
 
-__webpack_require__(26);
+__webpack_require__(27);
 
-__webpack_require__(25);
+__webpack_require__(26);
 
 __webpack_require__(21);
 
@@ -7211,11 +7241,13 @@ __webpack_require__(23);
 
 __webpack_require__(22);
 
-__webpack_require__(27);
-
 __webpack_require__(28);
 
 __webpack_require__(29);
+
+__webpack_require__(30);
+
+__webpack_require__(25);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7241,6 +7273,7 @@ var RouteContributer = function () {
     s.add('reset-password');
     s.add('send-verification-code');
     s.add('verify-code');
+    s.add('manage');
 
     s.add('projects');
 
@@ -7352,11 +7385,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(33);
+var _nprogress = __webpack_require__(34);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(37);
+__webpack_require__(38);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7606,6 +7639,55 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 "use strict";
 
 
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('manage', '<h2>Manage your account.</h2> <h4>Change your account settings</h4> <hr>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'manage';
+    self.status = {};
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.register, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
+        riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+    });
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
+    });
+    self._onUserManageInfoComplete = function () {
+        self.status.errors = riot.state.register.status.errors;
+        self.update();
+    };
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+    };
+});
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 __webpack_require__(19);
 
 var riot = __webpack_require__(0);
@@ -7669,7 +7751,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7726,7 +7808,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7784,7 +7866,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7846,7 +7928,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7929,7 +8011,7 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7943,7 +8025,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -7957,7 +8039,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8132,7 +8214,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8618,7 +8700,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8756,12 +8838,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(34);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(35);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9113,7 +9195,7 @@ route.parser();
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9139,13 +9221,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(31);
+var content = __webpack_require__(32);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9170,7 +9252,7 @@ if(false) {
 }
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports) {
 
 
@@ -9265,7 +9347,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports) {
 
 (function(self) {

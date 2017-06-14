@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    userManageInfo: Constants.NAMESPACE + 'user-manage-info',
+    userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
@@ -20,6 +22,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
@@ -44,6 +47,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
+      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
@@ -62,6 +67,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
+      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
@@ -228,6 +235,27 @@ export default class AccountStore {
     } else {
       riot.state.verifyCode.status = result.json.status;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
+    }
+  }
+  _onUserManageInfo(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.userManageInfo, body);
+
+    riot.state.manage = {};
+    let url = '/Manage/InfoJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.userManageInfoResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, null, myAck);
+  }
+
+  _onUserManageInfoResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'userManageInfo-1234'});
+    } else {
+      riot.state.manage.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.userManageInfoComplete);
     }
   }
 }
