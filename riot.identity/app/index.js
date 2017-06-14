@@ -25,6 +25,8 @@ riot.state.register = {};
 riot.state.verificationCode = {};
 riot.state.verifyCode = {};
 riot.state.manage = {};
+riot.state.manageAddPhone = {};
+riot.state.verifyPhoneNumber = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

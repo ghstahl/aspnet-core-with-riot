@@ -9,6 +9,10 @@ import './pages/reset-password.tag';
 import './pages/send-verification-code.tag';
 import './pages/verify-code.tag';
 import './pages/manage.tag';
+import './pages/manage-change-phone.tag';
+import './pages/manage-add-phone.tag';
+import './pages/verify-phone-number.tag';
+
 export default class RouteContributer {
   constructor() {
     riot.observable(this);
@@ -30,6 +34,9 @@ export default class RouteContributer {
     s.add('send-verification-code');
     s.add('verify-code');
     s.add('manage');
+    s.add('manage-change-phone');
+    s.add('manage-add-phone');
+    s.add('verify-phone-number');
 
     s.add('projects');
 

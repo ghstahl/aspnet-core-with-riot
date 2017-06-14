@@ -23,6 +23,13 @@ namespace TheWebApp.Controllers
         public Dictionary<string, object> Status;
         public IndexViewModel IndexViewModel { get; set; }
     }
+    public class EnableAnythingModel
+    {
+        public EnableAnythingModel()
+        {}
+        public bool enable;
+    }
+
 
     [Authorize]
     public class ManageController : Controller
@@ -72,6 +79,87 @@ namespace TheWebApp.Controllers
             };
             response.IndexViewModel = model;
             response.Status["ok"] = true;
+            return Json(response);
+        }
+        //
+        // POST: /Manage/AddPhoneNumberJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> AddPhoneNumberJson([FromBody]AddPhoneNumberViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            if (ModelState.IsValid)
+            {
+                // Generate the token and send it
+                var user = await GetCurrentUserAsync();
+                if (user == null)
+                {
+                    return Json(response);
+                }
+                var code = await _userManager.GenerateChangePhoneNumberTokenAsync(user, model.PhoneNumber);
+                await _smsSender.SendSmsAsync(model.PhoneNumber, "Your security code is: " + code);
+                response.status.ok = true;
+                response.phoneNumber = model.PhoneNumber;
+            }
+            return Json(response);
+        }
+
+        //
+        // POST: /Manage/VerifyPhoneNumberJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> VerifyPhoneNumberJson([FromBody]VerifyPhoneNumberViewModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            if (ModelState.IsValid)
+            {
+                var user = await GetCurrentUserAsync();
+                if (user != null)
+                {
+                    var result = await _userManager.ChangePhoneNumberAsync(user, model.PhoneNumber, model.Code);
+                    if (result.Succeeded)
+                    {
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        response.status.ok = true;
+                    }
+                    else
+                    {
+                        dynamic errors = new List<dynamic>();
+                        errors.Add("Failed to verify phone number");
+                        response.status.errors = errors;
+                    }
+                }
+            }
+            return Json(response);
+        }
+
+        //
+        // POST: /Manage/EnableTwoFactorAuthenticationJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> EnableTwoFactorAuthenticationJson([FromBody]EnableAnythingModel model)
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            if (ModelState.IsValid)
+            {
+                var user = await GetCurrentUserAsync();
+                if (user != null)
+                {
+                    await _userManager.SetTwoFactorEnabledAsync(user, model.enable);
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    response.status.ok = true;
+                    _logger.LogInformation(1,
+                        model.enable
+                            ? "User enabled two-factor authentication."
+                            : "User disabled two-factor authentication.");
+                }
+            }
             return Json(response);
         }
 

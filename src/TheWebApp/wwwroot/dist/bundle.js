@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(39);
+var	fixUrls = __webpack_require__(42);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3452,6 +3452,10 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
+    verifyPhoneNumberResult: Constants.NAMESPACE + 'verify-phone-number-result',
+    manageAddPhone: Constants.NAMESPACE + 'manage-add-phone',
+    manageAddPhoneResult: Constants.NAMESPACE + 'manage-add-phone-result',
     userManageInfo: Constants.NAMESPACE + 'user-manage-info',
     userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
@@ -3469,13 +3473,15 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
     registerComplete: Constants.NAMESPACE + 'register-complete',
     sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete',
-    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete'
+    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete',
+    manageAddPhoneComplete: Constants.NAMESPACE + 'manage-add-phone-complete'
   }
 };
 _deepFreeze2.default.freeze(Constants);
@@ -3500,6 +3506,10 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
+      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
@@ -3521,6 +3531,10 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
+      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
@@ -3706,12 +3720,56 @@ var AccountStore = function () {
   };
 
   AccountStore.prototype._onUserManageInfoResult = function _onUserManageInfoResult(result, ack) {
-    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, result, ack);
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'userManageInfo-1234' });
     } else {
       riot.state.manage.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.userManageInfoComplete);
+    }
+  };
+
+  AccountStore.prototype._onManageAddPhone = function _onManageAddPhone(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.manageAddPhone, body);
+
+    riot.state.manage = {};
+    var url = '/Manage/AddPhoneNumberJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onManageAddPhoneResult = function _onManageAddPhoneResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'manageAddPhone-1234' });
+    } else {
+      riot.state.manageAddPhone.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.manageAddPhoneComplete);
+    }
+  };
+
+  AccountStore.prototype._onVerifyPhoneNumber = function _onVerifyPhoneNumber(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, body);
+
+    riot.state.manage = {};
+    var url = '/Manage/VerifyPhoneNumberJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onVerifyPhoneNumberResult = function _onVerifyPhoneNumberResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'verifyPhoneNumber-1234' });
+    } else {
+      riot.state.verifyPhoneNumber.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyPhoneNumberComplete);
     }
   };
 
@@ -4510,7 +4568,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(33), __webpack_require__(36), __webpack_require__(37), __webpack_require__(40));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(36), __webpack_require__(39), __webpack_require__(40), __webpack_require__(43));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -6679,22 +6737,32 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var Validator = (function () {
-    function Validator() {
-    }
-    Validator.validateType = function (obj, type, name) {
-        if (!obj) {
-            throw new Error(name + ': is NULL');
-        }
-        if (!(obj instanceof type)) {
-            throw new Error(name + ': is NOT of type:' + type.name);
-        }
-    };
-    return Validator;
-}());
-exports.default = Validator;
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Validator = function () {
+  function Validator() {
+    _classCallCheck(this, Validator);
+  }
+
+  Validator.validateType = function validateType(obj, type, name) {
+    if (!obj) {
+      throw new Error(name + ': is NULL');
+    }
+    if (!(obj instanceof type)) {
+      throw new Error(name + ': is NOT of type:' + type.name);
+    }
+  };
+
+  return Validator;
+}();
+
+exports.default = Validator;
+module.exports = exports['default'];
 
 /***/ }),
 /* 16 */
@@ -6709,11 +6777,13 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension(riot) {
+var RiotRouteExtension = function RiotRouteExtension() {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
+  self.name = 'RiotRouteExtension';
+  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6817,6 +6887,61 @@ module.exports = exports['default'];
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var RandomString = function RandomString() {
+  _classCallCheck(this, RandomString);
+
+  var self = this;
+
+  self.name = 'RandomString';
+  self.namespace = self.name + ':';
+  self.generateRandomString = function (length) {
+    if (length && length > 16) {
+      length = 16;
+    } else {
+      length = 16;
+    }
+
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+  self.hashString = function (str) {
+    var hash = 5381;
+    var i = str.length;
+
+    while (i) {
+      hash = hash * 33 ^ str.charCodeAt(--i);
+    }
+    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+    * integers. Since we want the results to be always positive, convert the
+    * signed int to an unsigned by doing an unsigned bitshift. */
+    return hash >>> 0;
+  };
+  self.randomHash = function (length) {
+    return self.hashString(self.generateRandomString(length));
+  };
+};
+
+exports.default = RandomString;
+module.exports = exports['default'];
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -6863,49 +6988,6 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var RandomString = (function () {
-    function RandomString() {
-    }
-    RandomString.prototype.generateRandomString = function (length) {
-        if (length && length > 16) {
-            length = 16;
-        }
-        else {
-            length = 16;
-        }
-        var text = '';
-        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < length; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
-    };
-    RandomString.prototype.hashString = function (str) {
-        var hash = 5381;
-        var i = str.length;
-        while (i) {
-            hash = (hash * 33) ^ str.charCodeAt(--i);
-        }
-        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-        * integers. Since we want the results to be always positive, convert the
-        * signed int to an unsigned by doing an unsigned bitshift. */
-        return hash >>> 0;
-    };
-    RandomString.prototype.randomHash = function (str) {
-        return this.hashString(this.generateRandomString(length));
-    };
-    return RandomString;
-}());
-exports.default = RandomString;
-
-
-/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -6950,7 +7032,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(19);
+var _randomString = __webpack_require__(18);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7010,7 +7092,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(18);
+__webpack_require__(19);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7023,7 +7105,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default(riot);
+    this._masterEventTable = new _masterEventTable2.default();
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7047,7 +7129,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
+    this._riotRouteExtension = new _riotRouteExtension2.default();
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7110,7 +7192,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(31);
+var content = __webpack_require__(34);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7192,6 +7274,8 @@ riot.state.register = {};
 riot.state.verificationCode = {};
 riot.state.verifyCode = {};
 riot.state.manage = {};
+riot.state.manageAddPhone = {};
+riot.state.verifyPhoneNumber = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7231,9 +7315,9 @@ Object.defineProperty(exports, "__esModule", {
 
 __webpack_require__(24);
 
-__webpack_require__(27);
+__webpack_require__(29);
 
-__webpack_require__(26);
+__webpack_require__(28);
 
 __webpack_require__(21);
 
@@ -7241,13 +7325,19 @@ __webpack_require__(23);
 
 __webpack_require__(22);
 
-__webpack_require__(28);
-
-__webpack_require__(29);
-
 __webpack_require__(30);
 
+__webpack_require__(31);
+
+__webpack_require__(32);
+
+__webpack_require__(27);
+
+__webpack_require__(26);
+
 __webpack_require__(25);
+
+__webpack_require__(33);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7274,6 +7364,9 @@ var RouteContributer = function () {
     s.add('send-verification-code');
     s.add('verify-code');
     s.add('manage');
+    s.add('manage-change-phone');
+    s.add('manage-add-phone');
+    s.add('verify-phone-number');
 
     s.add('projects');
 
@@ -7385,11 +7478,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(34);
+var _nprogress = __webpack_require__(37);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(38);
+__webpack_require__(41);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7639,14 +7732,77 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 "use strict";
 
 
+var riot = __webpack_require__(0);
+
+riot.tag2('manage-add-phone', '<h2>Add Phone Number.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Add a phone number.</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="PhoneNumber" class="control-label">PhoneNumber</label> <input class="form-control" name="PhoneNumber" type="tel" id="PhoneNumber" data-error="The Phone number field is required." required> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Send verification code</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'manage-add-phone';
+    self.status = {};
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.manageAddPhone, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.manageAddPhoneComplete, self._onManageAddPhoneComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+    });
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.manageAddPhoneComplete, self._onManageAddPhoneComplete);
+    });
+    self._onManageAddPhoneComplete = function () {
+        self.status = riot.state.manageAddPhone.json.status;
+        if (!self.status.ok) {
+            self.update();
+        } else {
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/verify-phone-number');
+        }
+    };
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+    };
+});
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var riot = __webpack_require__(0);
+riot.tag2('manage-change-phone', '<h2>manage-change-phone</h2> <p> placeholder </p>', '', '', function (opts) {});
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <h4>Change your account settings</h4> <hr>', '', '', function (opts) {
+riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-change-phone" class="btn-bracketed">Change</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd> </dd> </dl> </div>', '', '', function (opts) {
     var self = this;
     self.mixin("forms-mixin");
     self.name = 'manage';
+    self.items = [{ title: 'Account', route: '/account' }, { title: 'Projects', route: '/main/projects' }];
+
     self.status = {};
     self.onSubmit = function (e) {
         var myForm = $('#myForm');
@@ -7673,7 +7829,8 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <h4>Change your account setti
         riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
     });
     self._onUserManageInfoComplete = function () {
-        self.status.errors = riot.state.register.status.errors;
+        self.json = riot.state.manage.json;
+        self.status = self.json;
         self.update();
     };
     self.generateAnError = function () {
@@ -7682,7 +7839,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <h4>Change your account setti
 });
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7751,7 +7908,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7808,7 +7965,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 28 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7866,7 +8023,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 29 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7928,7 +8085,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 30 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8011,7 +8168,85 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 31 */
+/* 33 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm" data-toggle="validator" role="form"> <hr> <div class="form-group"> <input type="hidden" data-val="true" data-val-required="" id="PhoneNumber" name="PhoneNumber" riot-value="{phoneNumber}"> <validation-summary status="{status}"></validation-summary> <label for="Code" class="control-label">Code</label> <input class="form-control" name="Code" type="text" id="Code" data-error="The Code field is required." required> <div class="help-block with-errors"></div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'verify-code';
+    self.status = {};
+    self.phoneNumber = "";
+
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.verifyPhoneNumber, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.on('before-mount', function () {
+        self.phoneNumber = riot.state.manageAddPhone.json.phoneNumber;
+    });
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.verifyPhoneNumberComplete, self._onVerifyPhoneNumberComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+        riot.state.register = {
+            status: {
+                errors: null
+            }
+        };
+    });
+
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.verifyPhoneNumberComplete, self._onVerifyPhoneNumberComplete);
+    });
+
+    self._onVerifyPhoneNumberComplete = function () {
+        self.status = riot.state.verifyPhoneNumber.json.status;
+        self.update();
+        if (self.status.ok) {
+            var returnUrl = '/';
+            if (riot.state.returnUrl) {
+                returnUrl = riot.state.returnUrl;
+            }
+            riot.state.returnUrl = undefined;
+            riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
+        } else {
+            if (self.status.IsLockedOut) {
+                riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/locked-out');
+            }
+        }
+    };
+
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+    };
+});
+
+/***/ }),
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8025,7 +8260,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 32 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8039,7 +8274,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 33 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8214,7 +8449,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 34 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8700,7 +8935,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 35 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -8838,12 +9073,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 36 */
+/* 39 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(35);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(38);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9195,7 +9430,7 @@ route.parser();
 
 
 /***/ }),
-/* 37 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9221,13 +9456,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 38 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(32);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9252,7 +9487,7 @@ if(false) {
 }
 
 /***/ }),
-/* 39 */
+/* 42 */
 /***/ (function(module, exports) {
 
 
@@ -9347,7 +9582,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 40 */
+/* 43 */
 /***/ (function(module, exports) {
 
 (function(self) {

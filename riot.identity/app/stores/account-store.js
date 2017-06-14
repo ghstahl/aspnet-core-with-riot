@@ -5,6 +5,10 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
+    verifyPhoneNumberResult: Constants.NAMESPACE + 'verify-phone-number-result',
+    manageAddPhone: Constants.NAMESPACE + 'manage-add-phone',
+    manageAddPhoneResult: Constants.NAMESPACE + 'manage-add-phone-result',
     userManageInfo: Constants.NAMESPACE + 'user-manage-info',
     userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
@@ -22,13 +26,15 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
     registerComplete: Constants.NAMESPACE + 'register-complete',
     sendVerificationCodeComplete: Constants.NAMESPACE + 'send-verification-code-complete',
-    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete'
+    verifyCodeComplete: Constants.NAMESPACE + 'verify-code-complete',
+    manageAddPhoneComplete: Constants.NAMESPACE + 'manage-add-phone-complete'
   }
 };
 DeepFreeze.freeze(Constants);
@@ -47,6 +53,10 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
+      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
+      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
+      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
@@ -67,6 +77,10 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
+      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
+      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
+      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
@@ -250,12 +264,56 @@ export default class AccountStore {
   }
 
   _onUserManageInfoResult(result, ack) {
-    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, result, ack);
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, result, ack);
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'userManageInfo-1234'});
     } else {
       riot.state.manage.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.userManageInfoComplete);
+    }
+  }
+
+  _onManageAddPhone(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.manageAddPhone, body);
+
+    riot.state.manage = {};
+    let url = '/Manage/AddPhoneNumberJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
+  }
+
+  _onManageAddPhoneResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'manageAddPhone-1234'});
+    } else {
+      riot.state.manageAddPhone.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.manageAddPhoneComplete);
+    }
+  }
+
+  _onVerifyPhoneNumber(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, body);
+
+    riot.state.manage = {};
+    let url = '/Manage/VerifyPhoneNumberJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body}, myAck);
+  }
+
+  _onVerifyPhoneNumberResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'verifyPhoneNumber-1234'});
+    } else {
+      riot.state.verifyPhoneNumber.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyPhoneNumberComplete);
     }
   }
 }
