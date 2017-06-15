@@ -13,7 +13,7 @@ import './pages/manage-change-phone.tag';
 import './pages/manage-add-phone.tag';
 import './pages/verify-phone-number.tag';
 import './pages/change-password.tag';
-
+import './pages/manage-external-logins.tag';
 
 export default class RouteContributer {
   constructor() {
@@ -40,7 +40,8 @@ export default class RouteContributer {
     s.add('manage-add-phone');
     s.add('verify-phone-number');
     s.add('change-password');
-    
+    s.add('manage-external-logins');
+
     s.add('projects');
 
     this.views = Array.from(s);

@@ -85,9 +85,13 @@ namespace TheWebApp
 
             app.UseStaticFiles();
 
-            app.UseIdentity();
-
-            // Add external authentication middleware below. To configure them please see https://go.microsoft.com/fwlink/?LinkID=532715
+            app.UseIdentity()
+                .UseTwitterAuthentication(
+                    new TwitterOptions()
+                    {
+                        ConsumerKey = Configuration["Authentication:Twitter:ConsumerKey"],
+                        ConsumerSecret = Configuration["Authentication:Twitter:ConsumerSecret"]
+                    });
 
             app.UseMvc(routes =>
             {

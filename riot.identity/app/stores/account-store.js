@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    externalLogins: Constants.NAMESPACE + 'external-logins',
+    externalLoginsResult: Constants.NAMESPACE + 'external-logins-result',
     changePassword: Constants.NAMESPACE + 'change-password',
     changePasswordResult: Constants.NAMESPACE + 'change-password-result',
     enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
@@ -32,6 +34,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    externalLoginsComplete: Constants.NAMESPACE + 'external-logins-complete',
     changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
     enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
@@ -62,6 +65,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
+      this.on(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
@@ -92,6 +97,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
+      this.off(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
@@ -395,6 +402,27 @@ export default class AccountStore {
     } else {
       riot.state.changePassword.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.changePasswordComplete);
+    }
+  }
+  _onExternalLogins(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.externalLogins, body);
+
+    riot.state.changePassword = {};
+    let url = '/Manage/ManageLoginsJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.externalLoginsResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'GET' }, myAck);
+  }
+
+  _onExternalLoginsResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'externalLogins-1234'});
+    } else {
+      riot.state.manageLogins.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.externalLoginsComplete);
     }
   }
 }

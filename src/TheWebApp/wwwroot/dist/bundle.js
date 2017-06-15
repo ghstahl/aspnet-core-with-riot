@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(43);
+var	fixUrls = __webpack_require__(44);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    externalLogins: Constants.NAMESPACE + 'external-logins',
+    externalLoginsResult: Constants.NAMESPACE + 'external-logins-result',
     changePassword: Constants.NAMESPACE + 'change-password',
     changePasswordResult: Constants.NAMESPACE + 'change-password-result',
     enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
@@ -3479,6 +3481,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    externalLoginsComplete: Constants.NAMESPACE + 'external-logins-complete',
     changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
     enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
@@ -3515,6 +3518,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
+      this.on(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
@@ -3546,6 +3551,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
+      this.off(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
@@ -3853,6 +3860,28 @@ var AccountStore = function () {
     } else {
       riot.state.changePassword.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.changePasswordComplete);
+    }
+  };
+
+  AccountStore.prototype._onExternalLogins = function _onExternalLogins(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.externalLogins, body);
+
+    riot.state.changePassword = {};
+    var url = '/Manage/ManageLoginsJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.externalLoginsResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'GET' }, myAck);
+  };
+
+  AccountStore.prototype._onExternalLoginsResult = function _onExternalLoginsResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'externalLogins-1234' });
+    } else {
+      riot.state.manageLogins.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.externalLoginsComplete);
     }
   };
 
@@ -4651,7 +4680,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(37), __webpack_require__(40), __webpack_require__(41), __webpack_require__(44));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(38), __webpack_require__(41), __webpack_require__(42), __webpack_require__(45));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7275,7 +7304,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(35);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7360,6 +7389,7 @@ riot.state.manage = {};
 riot.state.manageAddPhone = {};
 riot.state.verifyPhoneNumber = {};
 riot.state.changePassword = {};
+riot.state.manageLogins = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7399,9 +7429,9 @@ Object.defineProperty(exports, "__esModule", {
 
 __webpack_require__(25);
 
-__webpack_require__(30);
+__webpack_require__(31);
 
-__webpack_require__(29);
+__webpack_require__(30);
 
 __webpack_require__(22);
 
@@ -7409,21 +7439,23 @@ __webpack_require__(24);
 
 __webpack_require__(23);
 
-__webpack_require__(31);
-
 __webpack_require__(32);
 
 __webpack_require__(33);
 
-__webpack_require__(28);
+__webpack_require__(34);
+
+__webpack_require__(29);
 
 __webpack_require__(27);
 
 __webpack_require__(26);
 
-__webpack_require__(34);
+__webpack_require__(35);
 
 __webpack_require__(21);
+
+__webpack_require__(28);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7454,6 +7486,7 @@ var RouteContributer = function () {
     s.add('manage-add-phone');
     s.add('verify-phone-number');
     s.add('change-password');
+    s.add('manage-external-logins');
 
     s.add('projects');
 
@@ -7565,11 +7598,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(38);
+var _nprogress = __webpack_require__(39);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(42);
+__webpack_require__(43);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7942,7 +7975,79 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="#account/change-password">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
+riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveLoginProvider}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div>', '', '', function (opts) {
+  var self = this;
+  self.mixin("forms-mixin");
+  self.name = 'manage';
+
+  self.json = {};
+  self.status = {};
+  self.logins = {};
+
+  self.onSubmit = function (e) {
+    var myForm = $('#myForm');
+    var data = self.toJSONString(myForm[0]);
+
+    var disabled = $('#submitButton').hasClass("disabled");
+    if (!disabled) {
+      console.log('valid');
+      e.preventDefault();
+      riot.control.trigger(riot.EVT.accountStore.in.register, data);
+    } else {
+      console.log('invalid');
+    }
+  };
+
+  self.route = function (evt) {
+    riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+  };
+
+  self.on('mount', function () {
+    riot.control.on(riot.EVT.accountStore.out.externalLoginsComplete, self._onExternalLoginsComplete);
+
+    riot.control.trigger(riot.EVT.accountStore.in.externalLogins);
+  });
+
+  self.on('unmount', function () {
+    riot.control.off(riot.EVT.accountStore.out.externalLoginsComplete, self._onExternalLoginsComplete);
+  });
+
+  self.onToggleTwoFactor = function (evt) {
+    riot.control.trigger(riot.EVT.accountStore.in.enableTwoFactor, { enable: !self.json.indexViewModel.twoFactor });
+  };
+
+  self.onRemovePhoneNumber = function (evt) {
+    riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
+  };
+
+  self._onFetchNewInfo = function () {
+    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+  };
+
+  self._onExternalLoginsComplete = function () {
+    self.json = riot.state.manageLogins.json;
+    var status = self.json.status;
+    self.logins.manageLoginsViewModel = self.json.manageLoginsViewModel;
+    self.update();
+  };
+
+  self.generateAnError = function () {
+    riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+  };
+});
+
+/***/ }),
+/* 29 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('manage', '<h2>Manage your account.</h2> <div if="{json.indexViewModel}"> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="#account/change-password">Change</a> </dd> <dt>External Logins:</dt> <dd> {json.indexViewModel.logins.length} <a class="btn-bracketed" href="#account/manage-external-logins">Manage</a> </dd> <dt>Phone Number:</dt> <dd> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
@@ -8006,7 +8111,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account
 });
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8075,7 +8180,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8132,7 +8237,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8190,7 +8295,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8252,7 +8357,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8333,7 +8438,7 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8403,7 +8508,7 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
 });
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8417,7 +8522,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8431,7 +8536,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8606,7 +8711,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -9092,7 +9197,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -9230,12 +9335,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(40);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9587,7 +9692,7 @@ route.parser();
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9613,13 +9718,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9644,7 +9749,7 @@ if(false) {
 }
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports) {
 
 
@@ -9739,7 +9844,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports) {
 
 (function(self) {

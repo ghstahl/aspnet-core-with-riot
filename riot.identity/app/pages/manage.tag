@@ -3,21 +3,21 @@ import '../components/validation-summary.tag'
 <manage>
 <h2>Manage your account.</h2>
 
-<div>
+<div if={json.indexViewModel}>
     <h4>Change your account settings</h4>
     <hr />
     <dl class="dl-horizontal">
         <dt>Password:</dt>
         <dd>
-                <a class="btn-bracketed" href="#account/change-password">Change</a>
+          <a class="btn-bracketed" href="#account/change-password">Change</a>
         </dd>
         <dt>External Logins:</dt>
         <dd>
-
-            0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a>
+          {json.indexViewModel.logins.length}
+          <a class="btn-bracketed" href="#account/manage-external-logins">Manage</a>
         </dd>
         <dt>Phone Number:</dt>
-        <dd if={json.indexViewModel}>
+        <dd>
           
           <div if={json.indexViewModel.phoneNumber}>
             {json.indexViewModel.phoneNumber}
@@ -44,13 +44,13 @@ import '../components/validation-summary.tag'
 
 <script>
 	var self = this;
-  	self.mixin("forms-mixin");
+  self.mixin("forms-mixin");
 	self.name = 'manage';
 
-  	self.json = {};
+  self.json = {};
 	self.status = {};
 
-  	self.onSubmit = (e) =>{
+  self.onSubmit = (e) =>{
 		let myForm = $('#myForm');
 		let data = self.toJSONString(myForm[0]);
 
@@ -63,11 +63,11 @@ import '../components/validation-summary.tag'
 		}else{
 		  console.log('invalid');
 		}
-  	}
+	}
 
-  	self.route = (evt) => {
-    	riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
-    };
+	self.route = (evt) => {
+  	riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
+  };
     
 
 	self.on('mount', function() {

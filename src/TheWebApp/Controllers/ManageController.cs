@@ -212,8 +212,32 @@ namespace TheWebApp.Controllers
             }
             response.status.errors = errors;
             return Json(response);
-
         }
+
+        //GET: /Manage/ManageLoginsJson
+        [HttpGet]
+        public async Task<JsonResult> ManageLoginsJson()
+        {
+            dynamic response = MakeInitialStatusResponse();
+
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return Json(response);
+            }
+            var userLogins = await _userManager.GetLoginsAsync(user);
+            var otherLogins = _signInManager.GetExternalAuthenticationSchemes().Where(auth => userLogins.All(ul => auth.AuthenticationScheme != ul.LoginProvider)).ToList();
+           
+            dynamic mlvResponse = new ManageLoginsViewModel
+            {
+                CurrentLogins = userLogins,
+                OtherLogins = otherLogins
+            };
+            response.manageLoginsViewModel = mlvResponse;
+            response.status.ok = true;
+            return Json(response);
+        }
+
         //
         // GET: /Manage/Index
         [HttpGet]
