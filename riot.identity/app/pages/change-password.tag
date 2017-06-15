@@ -59,7 +59,7 @@ import '../components/validation-summary.tag'
         if(!disabled) {
             console.log('valid');
             e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.register,data);
+            riot.control.trigger(riot.EVT.accountStore.in.changePassword,data);
 
         }else{
             console.log('invalid');
@@ -77,11 +77,6 @@ import '../components/validation-summary.tag'
         let myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-        	status:{
-        		errors:null
-        	}
-        };
         
     })
 	self.on('unmount', function() {
@@ -89,10 +84,11 @@ import '../components/validation-summary.tag'
       		self._onChangePasswordComplete);
     })
     self._onChangePasswordComplete = () =>{
-	    self.status = riot.state.changePassword.json.status;
-	    if(self.status.ok){
-	        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'#account/manage');
+	    
+	    if(riot.state.changePassword.json.status.ok){
+	        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/manage');
 	    }else{
+            self.status.errors = riot.state.changePassword.json.status.errors;
 	    	self.update();
 	    }
     }

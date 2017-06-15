@@ -6820,22 +6820,32 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var Validator = (function () {
-    function Validator() {
-    }
-    Validator.validateType = function (obj, type, name) {
-        if (!obj) {
-            throw new Error(name + ': is NULL');
-        }
-        if (!(obj instanceof type)) {
-            throw new Error(name + ': is NOT of type:' + type.name);
-        }
-    };
-    return Validator;
-}());
-exports.default = Validator;
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Validator = function () {
+  function Validator() {
+    _classCallCheck(this, Validator);
+  }
+
+  Validator.validateType = function validateType(obj, type, name) {
+    if (!obj) {
+      throw new Error(name + ': is NULL');
+    }
+    if (!(obj instanceof type)) {
+      throw new Error(name + ': is NOT of type:' + type.name);
+    }
+  };
+
+  return Validator;
+}();
+
+exports.default = Validator;
+module.exports = exports['default'];
 
 /***/ }),
 /* 16 */
@@ -6850,11 +6860,13 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension(riot) {
+var RiotRouteExtension = function RiotRouteExtension() {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
+  self.name = 'RiotRouteExtension';
+  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6958,6 +6970,61 @@ module.exports = exports['default'];
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var RandomString = function RandomString() {
+  _classCallCheck(this, RandomString);
+
+  var self = this;
+
+  self.name = 'RandomString';
+  self.namespace = self.name + ':';
+  self.generateRandomString = function (length) {
+    if (length && length > 16) {
+      length = 16;
+    } else {
+      length = 16;
+    }
+
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+  self.hashString = function (str) {
+    var hash = 5381;
+    var i = str.length;
+
+    while (i) {
+      hash = hash * 33 ^ str.charCodeAt(--i);
+    }
+    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+    * integers. Since we want the results to be always positive, convert the
+    * signed int to an unsigned by doing an unsigned bitshift. */
+    return hash >>> 0;
+  };
+  self.randomHash = function (length) {
+    return self.hashString(self.generateRandomString(length));
+  };
+};
+
+exports.default = RandomString;
+module.exports = exports['default'];
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -7004,49 +7071,6 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var RandomString = (function () {
-    function RandomString() {
-    }
-    RandomString.prototype.generateRandomString = function (length) {
-        if (length && length > 16) {
-            length = 16;
-        }
-        else {
-            length = 16;
-        }
-        var text = '';
-        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < length; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
-    };
-    RandomString.prototype.hashString = function (str) {
-        var hash = 5381;
-        var i = str.length;
-        while (i) {
-            hash = (hash * 33) ^ str.charCodeAt(--i);
-        }
-        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-        * integers. Since we want the results to be always positive, convert the
-        * signed int to an unsigned by doing an unsigned bitshift. */
-        return hash >>> 0;
-    };
-    RandomString.prototype.randomHash = function (str) {
-        return this.hashString(this.generateRandomString(length));
-    };
-    return RandomString;
-}());
-exports.default = RandomString;
-
-
-/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -7091,7 +7115,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(19);
+var _randomString = __webpack_require__(18);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7151,7 +7175,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(18);
+__webpack_require__(19);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7164,7 +7188,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default(riot);
+    this._masterEventTable = new _masterEventTable2.default();
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7188,7 +7212,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
+    this._riotRouteExtension = new _riotRouteExtension2.default();
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7643,7 +7667,7 @@ riot.tag2('change-password', '<h2>Change Password.</h2> <form id="myForm" data-t
         if (!disabled) {
             console.log('valid');
             e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.register, data);
+            riot.control.trigger(riot.EVT.accountStore.in.changePassword, data);
         } else {
             console.log('invalid');
         }
@@ -7658,20 +7682,16 @@ riot.tag2('change-password', '<h2>Change Password.</h2> <form id="myForm" data-t
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-            status: {
-                errors: null
-            }
-        };
     });
     self.on('unmount', function () {
         riot.control.off(riot.EVT.accountStore.out.changePasswordComplete, self._onChangePasswordComplete);
     });
     self._onChangePasswordComplete = function () {
-        self.status = riot.state.changePassword.json.status;
-        if (self.status.ok) {
-            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '#account/manage');
+
+        if (riot.state.changePassword.json.status.ok) {
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/manage');
         } else {
+            self.status.errors = riot.state.changePassword.json.status.errors;
             self.update();
         }
     };
