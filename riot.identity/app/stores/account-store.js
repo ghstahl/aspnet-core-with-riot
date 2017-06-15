@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    changePassword: Constants.NAMESPACE + 'change-password',
+    changePasswordResult: Constants.NAMESPACE + 'change-password-result',
     enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
     enableTwoFactorResult: Constants.NAMESPACE + 'enable-two-factor-result',
     removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
@@ -30,9 +32,10 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
-    enableTwoFactorComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
+    changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
+    enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
-    verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
+    verifyPhoneNumberComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
@@ -59,6 +62,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
+      this.on(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
@@ -87,6 +92,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
+      this.off(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
@@ -334,7 +341,6 @@ export default class AccountStore {
   _onRemovePhoneNumber(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, body);
 
-    riot.state.manage = {};
     let url = '/Manage/RemovePhoneNumberJson';
     let myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult
@@ -354,7 +360,6 @@ export default class AccountStore {
   _onEnableTwoFactor(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, body);
 
-    riot.state.manage = {};
     let url = '/Manage/EnableTwoFactorAuthenticationJson';
     let myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult
@@ -369,6 +374,27 @@ export default class AccountStore {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'enableTwoFactor-1234'});
     } else {
       this.trigger(Constants.WELLKNOWN_EVENTS.out.enableTwoFactorComplete);
+    }
+  }
+  _onChangePassword(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.changePassword, body);
+
+    riot.state.changePassword = {};
+    let url = '/Manage/ChangePasswordJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.changePasswordResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body }, myAck);
+  }
+
+  _onChangePasswordResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.changePasswordResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'changePassword-1234'});
+    } else {
+      riot.state.changePassword.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.changePasswordComplete);
     }
   }
 }

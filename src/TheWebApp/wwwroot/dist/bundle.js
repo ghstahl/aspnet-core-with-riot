@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(42);
+var	fixUrls = __webpack_require__(43);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    changePassword: Constants.NAMESPACE + 'change-password',
+    changePasswordResult: Constants.NAMESPACE + 'change-password-result',
     enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
     enableTwoFactorResult: Constants.NAMESPACE + 'enable-two-factor-result',
     removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
@@ -3477,9 +3479,10 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
-    enableTwoFactorComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
+    changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
+    enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
-    verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
+    verifyPhoneNumberComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
@@ -3512,6 +3515,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
+      this.on(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
       this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
@@ -3541,6 +3546,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
+      this.off(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
       this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
@@ -3790,7 +3797,6 @@ var AccountStore = function () {
   AccountStore.prototype._onRemovePhoneNumber = function _onRemovePhoneNumber(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, body);
 
-    riot.state.manage = {};
     var url = '/Manage/RemovePhoneNumberJson';
     var myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult
@@ -3811,7 +3817,6 @@ var AccountStore = function () {
   AccountStore.prototype._onEnableTwoFactor = function _onEnableTwoFactor(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, body);
 
-    riot.state.manage = {};
     var url = '/Manage/EnableTwoFactorAuthenticationJson';
     var myAck = {
       evt: Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult
@@ -3826,6 +3831,28 @@ var AccountStore = function () {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'enableTwoFactor-1234' });
     } else {
       this.trigger(Constants.WELLKNOWN_EVENTS.out.enableTwoFactorComplete);
+    }
+  };
+
+  AccountStore.prototype._onChangePassword = function _onChangePassword(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.changePassword, body);
+
+    riot.state.changePassword = {};
+    var url = '/Manage/ChangePasswordJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.changePasswordResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onChangePasswordResult = function _onChangePasswordResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.changePasswordResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'changePassword-1234' });
+    } else {
+      riot.state.changePassword.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.changePasswordComplete);
     }
   };
 
@@ -4624,7 +4651,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(36), __webpack_require__(39), __webpack_require__(40), __webpack_require__(43));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(37), __webpack_require__(40), __webpack_require__(41), __webpack_require__(44));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7224,7 +7251,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(34);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7308,6 +7335,7 @@ riot.state.verifyCode = {};
 riot.state.manage = {};
 riot.state.manageAddPhone = {};
 riot.state.verifyPhoneNumber = {};
+riot.state.changePassword = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7345,31 +7373,33 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-__webpack_require__(24);
+__webpack_require__(25);
+
+__webpack_require__(30);
 
 __webpack_require__(29);
 
-__webpack_require__(28);
-
-__webpack_require__(21);
-
-__webpack_require__(23);
-
 __webpack_require__(22);
 
-__webpack_require__(30);
+__webpack_require__(24);
+
+__webpack_require__(23);
 
 __webpack_require__(31);
 
 __webpack_require__(32);
 
+__webpack_require__(33);
+
+__webpack_require__(28);
+
 __webpack_require__(27);
 
 __webpack_require__(26);
 
-__webpack_require__(25);
+__webpack_require__(34);
 
-__webpack_require__(33);
+__webpack_require__(21);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7399,6 +7429,7 @@ var RouteContributer = function () {
     s.add('manage-change-phone');
     s.add('manage-add-phone');
     s.add('verify-phone-number');
+    s.add('change-password');
 
     s.add('projects');
 
@@ -7510,11 +7541,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(37);
+var _nprogress = __webpack_require__(38);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(41);
+__webpack_require__(42);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7594,6 +7625,68 @@ riot.tag2('sidebar', '<a each="{state.items}" onclick="{parent.route}" class="{p
 "use strict";
 
 
+__webpack_require__(1);
+
+var riot = __webpack_require__(0);
+
+riot.tag2('change-password', '<h2>Change Password.</h2> <form id="myForm" data-toggle="validator" role="form"> <h4>Change Password Form</h4> <hr> <div class="form-group"> <validation-summary status="{status}"></validation-summary> <label for="inputOldPassword" class="control-label">Current Password</label> <input class="form-control" name="OldPassword" type="password" data-minlength="6" id="inputOldPassword" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputNewPassword" class="control-label">New Password</label> <input class="form-control" name="NewPassword" type="password" data-minlength="6" id="inputNewPassword" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <label for="inputConfirmPassword" class="control-label">Confirm New Password</label> <input class="form-control" name="ConfirmPassword" type="password" data-minlength="6" id="inputConfirmPassword" data-match="#inputNewPassword" data-match-error="The password and confirmation password do not match." required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Submit</button> </div> </form>', '', '', function (opts) {
+    var self = this;
+    self.mixin("forms-mixin");
+    self.name = 'register';
+    self.status = {};
+
+    self.onSubmit = function (e) {
+        var myForm = $('#myForm');
+        var data = self.toJSONString(myForm[0]);
+
+        var disabled = $('#submitButton').hasClass("disabled");
+        if (!disabled) {
+            console.log('valid');
+            e.preventDefault();
+            riot.control.trigger(riot.EVT.accountStore.in.register, data);
+        } else {
+            console.log('invalid');
+        }
+    };
+    self.route = function (evt) {
+        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+    };
+
+    self.on('mount', function () {
+        riot.control.on(riot.EVT.accountStore.out.changePasswordComplete, self._onChangePasswordComplete);
+
+        var myForm = $('#myForm');
+        myForm.validator();
+        myForm.on('submit', self.onSubmit);
+        riot.state.register = {
+            status: {
+                errors: null
+            }
+        };
+    });
+    self.on('unmount', function () {
+        riot.control.off(riot.EVT.accountStore.out.changePasswordComplete, self._onChangePasswordComplete);
+    });
+    self._onChangePasswordComplete = function () {
+        self.status = riot.state.changePassword.json.status;
+        if (self.status.ok) {
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '#account/manage');
+        } else {
+            self.update();
+        }
+    };
+    self.generateAnError = function () {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'changePasswords-143523' });
+    };
+});
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var riot = __webpack_require__(0);
 riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"> <h3 class="panel-title">Error Code: {state.code} </h3> </div> <div class="panel-body"> <div class="alert alert-danger"> <strong>Well Hell!</strong> We have dispatched the minions to determine who was responsible for this defect. Once they have been dealt with, we will fix the issue. </div> </div> </div>', '', '', function (opts) {
   var self = this;
@@ -7614,7 +7707,7 @@ riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"
 });
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7624,7 +7717,7 @@ var riot = __webpack_require__(0);
 riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Please check your email to reset your password. </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7676,7 +7769,7 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 });
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7758,7 +7851,7 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 });
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7809,7 +7902,7 @@ riot.tag2('manage-add-phone', '<h2>Add Phone Number.</h2> <form id="myForm" data
 });
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7819,7 +7912,7 @@ var riot = __webpack_require__(0);
 riot.tag2('manage-change-phone', '<h2>manage-change-phone</h2> <p> placeholder </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7829,7 +7922,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
+riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="#account/change-password">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
@@ -7857,13 +7950,16 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account
 
   self.on('mount', function () {
     riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
-    riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onRemovePhoneNumberComplete);
+    riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onFetchNewInfo);
+    riot.control.on(riot.EVT.accountStore.out.enableTwoFactorComplete, self._onFetchNewInfo);
+
     riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
   });
 
   self.on('unmount', function () {
     riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
-    riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onRemovePhoneNumberComplete);
+    riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onFetchNewInfo);
+    riot.control.off(riot.EVT.accountStore.out.enableTwoFactorComplete, self._onFetchNewInfo);
   });
 
   self.onToggleTwoFactor = function (evt) {
@@ -7874,7 +7970,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account
     riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
   };
 
-  self._onRemovePhoneNumberComplete = function () {
+  self._onFetchNewInfo = function () {
     riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
   };
 
@@ -7890,7 +7986,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account
 });
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7959,7 +8055,7 @@ riot.tag2('projects', '<div each="{component in components}" class="panel panel-
 });
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8016,7 +8112,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8074,7 +8170,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8136,7 +8232,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8219,7 +8315,7 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8263,11 +8359,6 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-            status: {
-                errors: null
-            }
-        };
     });
 
     self.on('unmount', function () {
@@ -8275,18 +8366,15 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
     });
 
     self._onVerifyPhoneNumberComplete = function () {
-        self.status = riot.state.verifyPhoneNumber.json.status;
-        self.update();
-        if (self.status.ok) {
-            var returnUrl = '/';
-            if (riot.state.returnUrl) {
-                returnUrl = riot.state.returnUrl;
-            }
-            riot.state.returnUrl = undefined;
-            riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
+
+        if (riot.state.verifyPhoneNumber.json.status.ok) {
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/manage');
         } else {
             if (self.status.IsLockedOut) {
                 riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/locked-out');
+            } else {
+                self.status.errors = riot.state.verifyPhoneNumber.json.status.errors;
+                self.update();
             }
         }
     };
@@ -8297,7 +8385,7 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
 });
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8311,7 +8399,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8325,7 +8413,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8500,7 +8588,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -8986,7 +9074,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -9124,12 +9212,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(38);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(39);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9481,7 +9569,7 @@ route.parser();
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9507,13 +9595,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(35);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9538,7 +9626,7 @@ if(false) {
 }
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports) {
 
 
@@ -9633,7 +9721,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports) {
 
 (function(self) {

@@ -9,7 +9,7 @@ import '../components/validation-summary.tag'
     <dl class="dl-horizontal">
         <dt>Password:</dt>
         <dd>
-                <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a>
+                <a class="btn-bracketed" href="#account/change-password">Change</a>
         </dd>
         <dt>External Logins:</dt>
         <dd>
@@ -72,9 +72,12 @@ import '../components/validation-summary.tag'
 
 	self.on('mount', function() {
 		riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete,
-      		self._onUserManageInfoComplete);
+			self._onUserManageInfoComplete);
     	riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete,
-          self._onRemovePhoneNumberComplete);
+          	self._onFetchNewInfo);
+    	riot.control.on(riot.EVT.accountStore.out.enableTwoFactorComplete,
+          	self._onFetchNewInfo);
+
 		riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
     })
 
@@ -82,7 +85,9 @@ import '../components/validation-summary.tag'
    		riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete,
       		self._onUserManageInfoComplete);
     	riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete,
-          self._onRemovePhoneNumberComplete);
+          	self._onFetchNewInfo);
+    	riot.control.off(riot.EVT.accountStore.out.enableTwoFactorComplete,
+          	self._onFetchNewInfo);
     })
 
 	
@@ -94,7 +99,7 @@ import '../components/validation-summary.tag'
     	riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
     }
 
-  	self._onRemovePhoneNumberComplete = () =>{
+  	self._onFetchNewInfo = () =>{
     	riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
   	}
 

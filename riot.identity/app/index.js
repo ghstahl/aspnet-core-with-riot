@@ -27,6 +27,7 @@ riot.state.verifyCode = {};
 riot.state.manage = {};
 riot.state.manageAddPhone = {};
 riot.state.verifyPhoneNumber = {};
+riot.state.changePassword = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

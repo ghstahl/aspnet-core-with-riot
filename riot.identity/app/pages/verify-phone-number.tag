@@ -31,7 +31,7 @@ import '../components/validation-summary.tag'
 	var self = this;
     self.mixin("forms-mixin");
 	self.name = 'verify-code';
-	self.status = {};
+	self.status = { };
 	self.phoneNumber = "";
 
     self.onSubmit = (e) =>{
@@ -63,12 +63,7 @@ import '../components/validation-summary.tag'
         let myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-        	status:{
-        		errors:null
-        	}
-        };
-        
+
     })
 
 	self.on('unmount', function() {
@@ -77,19 +72,16 @@ import '../components/validation-summary.tag'
     })
 
     self._onVerifyPhoneNumberComplete = () =>{
-	    self.status = riot.state.verifyPhoneNumber.json.status;
-    	self.update();
-    	if(self.status.ok){
-            let returnUrl = '/';
-            if (riot.state.returnUrl) {
-              returnUrl = riot.state.returnUrl;
-            }
-            riot.state.returnUrl = undefined;
-            riot.control.trigger(riot.EVT.accountStore.in.redirect,returnUrl);
+
+    	if(riot.state.verifyPhoneNumber.json.status.ok){
+            riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/manage');
     	}else{
     		if(self.status.IsLockedOut){
     			riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/locked-out');
-    		}
+    		}else{
+                self.status.errors = riot.state.verifyPhoneNumber.json.status.errors;
+                self.update();
+            }
     	}
     }
 

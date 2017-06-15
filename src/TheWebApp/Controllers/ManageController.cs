@@ -178,7 +178,42 @@ namespace TheWebApp.Controllers
             }
             return Json(response);
         }
+        //
+        // POST: /Manage/ChangePasswordJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> ChangePasswordJson([FromBody]ChangePasswordViewModel model)
+        {
+            dynamic response = MakeInitialStatusResponse();
+            if (!ModelState.IsValid)
+            {
+                return Json(response);
+            }
 
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return Json(response);
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (result.Succeeded)
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                _logger.LogInformation(3, "User changed their password successfully.");
+                response.status.ok = true;
+                return Json(response);
+            }
+
+            dynamic errors = new List<dynamic>();
+            foreach (var error in result.Errors)
+            {
+                errors.Add(error.Description);
+            }
+            response.status.errors = errors;
+            return Json(response);
+
+        }
         //
         // GET: /Manage/Index
         [HttpGet]
