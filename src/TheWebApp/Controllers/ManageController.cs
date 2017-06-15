@@ -14,15 +14,7 @@ using TheWebApp.Services;
 
 namespace TheWebApp.Controllers
 {
-    class UserInfoResultModel
-    {
-        public UserInfoResultModel()
-        {
-            Status = new Dictionary<string, object>();
-        }
-        public Dictionary<string, object> Status;
-        public IndexViewModel IndexViewModel { get; set; }
-    }
+
     public class EnableAnythingModel
     {
         public EnableAnythingModel()
@@ -41,6 +33,13 @@ namespace TheWebApp.Controllers
         private readonly ISmsSender _smsSender;
         private readonly ILogger _logger;
 
+        dynamic MakeInitialStatusResponse()
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            return response;
+        }
         public ManageController(
           UserManager<ApplicationUser> userManager,
           SignInManager<ApplicationUser> signInManager,
@@ -62,8 +61,8 @@ namespace TheWebApp.Controllers
         [HttpGet]
         public async Task<JsonResult> InfoJson ()
         {
-            var response = new UserInfoResultModel { Status = { ["ok"] = false } };
-
+            dynamic response = MakeInitialStatusResponse();
+           
             var user = await GetCurrentUserAsync();
             if (user == null)
             {
@@ -77,8 +76,9 @@ namespace TheWebApp.Controllers
                 Logins = await _userManager.GetLoginsAsync(user),
                 BrowserRemembered = await _signInManager.IsTwoFactorClientRememberedAsync(user)
             };
-            response.IndexViewModel = model;
-            response.Status["ok"] = true;
+            response.indexViewModel = model;
+            response.status.ok = true;
+
             return Json(response);
         }
         //
@@ -87,9 +87,8 @@ namespace TheWebApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> AddPhoneNumberJson([FromBody]AddPhoneNumberViewModel model)
         {
-            dynamic response = new ExpandoObject();
-            response.status = new ExpandoObject();
-            response.status.ok = false;
+            dynamic response = MakeInitialStatusResponse();
+
             if (ModelState.IsValid)
             {
                 // Generate the token and send it
@@ -101,20 +100,39 @@ namespace TheWebApp.Controllers
                 var code = await _userManager.GenerateChangePhoneNumberTokenAsync(user, model.PhoneNumber);
                 await _smsSender.SendSmsAsync(model.PhoneNumber, "Your security code is: " + code);
                 response.status.ok = true;
+                
                 response.phoneNumber = model.PhoneNumber;
             }
             return Json(response);
         }
 
         //
+        // POST: /Manage/RemovePhoneNumberJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> RemovePhoneNumberJson()
+        {
+            dynamic response = MakeInitialStatusResponse();
+
+            var user = await GetCurrentUserAsync();
+            if (user != null)
+            {
+                var result = await _userManager.SetPhoneNumberAsync(user, null);
+                if (result.Succeeded)
+                {
+                    response.status.ok = true;
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                }
+            }
+            return Json(response);
+        }
+        //
         // POST: /Manage/VerifyPhoneNumberJson
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> VerifyPhoneNumberJson([FromBody]VerifyPhoneNumberViewModel model)
         {
-            dynamic response = new ExpandoObject();
-            response.status = new ExpandoObject();
-            response.status.ok = false;
+            dynamic response = MakeInitialStatusResponse();
             if (ModelState.IsValid)
             {
                 var user = await GetCurrentUserAsync();
@@ -143,9 +161,7 @@ namespace TheWebApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> EnableTwoFactorAuthenticationJson([FromBody]EnableAnythingModel model)
         {
-            dynamic response = new ExpandoObject();
-            response.status = new ExpandoObject();
-            response.status.ok = false;
+            dynamic response = MakeInitialStatusResponse();
             if (ModelState.IsValid)
             {
                 var user = await GetCurrentUserAsync();

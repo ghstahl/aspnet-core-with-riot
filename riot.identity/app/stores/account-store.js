@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
+    removePhoneNumberResult: Constants.NAMESPACE + 'remove-phone-number-result',
     verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
     verifyPhoneNumberResult: Constants.NAMESPACE + 'verify-phone-number-result',
     manageAddPhone: Constants.NAMESPACE + 'manage-add-phone',
@@ -26,6 +28,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
@@ -53,6 +56,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
+      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
@@ -77,6 +82,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
+      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
@@ -314,6 +321,27 @@ export default class AccountStore {
     } else {
       riot.state.verifyPhoneNumber.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyPhoneNumberComplete);
+    }
+  }
+
+  _onRemovePhoneNumber(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, body);
+
+    riot.state.manage = {};
+    let url = '/Manage/RemovePhoneNumberJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST' }, myAck);
+  }
+
+  _onRemovePhoneNumberResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'verifyPhoneNumber-1234'});
+    } else {
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.removePhoneNumberComplete);
     }
   }
 }

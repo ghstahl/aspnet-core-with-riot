@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
+    removePhoneNumberResult: Constants.NAMESPACE + 'remove-phone-number-result',
     verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
     verifyPhoneNumberResult: Constants.NAMESPACE + 'verify-phone-number-result',
     manageAddPhone: Constants.NAMESPACE + 'manage-add-phone',
@@ -3473,6 +3475,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
@@ -3506,6 +3509,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
+      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
@@ -3531,6 +3536,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
+      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
@@ -3770,6 +3777,27 @@ var AccountStore = function () {
     } else {
       riot.state.verifyPhoneNumber.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyPhoneNumberComplete);
+    }
+  };
+
+  AccountStore.prototype._onRemovePhoneNumber = function _onRemovePhoneNumber(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, body);
+
+    riot.state.manage = {};
+    var url = '/Manage/RemovePhoneNumberJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST' }, myAck);
+  };
+
+  AccountStore.prototype._onRemovePhoneNumberResult = function _onRemovePhoneNumberResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'verifyPhoneNumber-1234' });
+    } else {
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.removePhoneNumberComplete);
     }
   };
 
@@ -7797,45 +7825,60 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-change-phone" class="btn-bracketed">Change</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd> </dd> </dl> </div>', '', '', function (opts) {
-    var self = this;
-    self.mixin("forms-mixin");
-    self.name = 'manage';
-    self.items = [{ title: 'Account', route: '/account' }, { title: 'Projects', route: '/main/projects' }];
+riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-change-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd> </dd> </dl> </div>', '', '', function (opts) {
+  var self = this;
+  self.mixin("forms-mixin");
+  self.name = 'manage';
 
-    self.status = {};
-    self.onSubmit = function (e) {
-        var myForm = $('#myForm');
-        var data = self.toJSONString(myForm[0]);
+  self.json = {};
+  self.status = {};
 
-        var disabled = $('#submitButton').hasClass("disabled");
-        if (!disabled) {
-            console.log('valid');
-            e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.register, data);
-        } else {
-            console.log('invalid');
-        }
-    };
-    self.route = function (evt) {
-        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
-    };
+  self.onSubmit = function (e) {
+    var myForm = $('#myForm');
+    var data = self.toJSONString(myForm[0]);
 
-    self.on('mount', function () {
-        riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
-        riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
-    });
-    self.on('unmount', function () {
-        riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
-    });
-    self._onUserManageInfoComplete = function () {
-        self.json = riot.state.manage.json;
-        self.status = self.json;
-        self.update();
-    };
-    self.generateAnError = function () {
-        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
-    };
+    var disabled = $('#submitButton').hasClass("disabled");
+    if (!disabled) {
+      console.log('valid');
+      e.preventDefault();
+      riot.control.trigger(riot.EVT.accountStore.in.register, data);
+    } else {
+      console.log('invalid');
+    }
+  };
+
+  self.route = function (evt) {
+    riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
+  };
+
+  self.on('mount', function () {
+    riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
+    riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onRemovePhoneNumberComplete);
+    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+  });
+
+  self.on('unmount', function () {
+    riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
+    riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onRemovePhoneNumberComplete);
+  });
+
+  self.onRemovePhoneNumber = function (evt) {
+    riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
+  };
+
+  self._onRemovePhoneNumberComplete = function () {
+    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+  };
+
+  self._onUserManageInfoComplete = function () {
+    self.json = riot.state.manage.json;
+    self.status = self.json;
+    self.update();
+  };
+
+  self.generateAnError = function () {
+    riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+  };
 });
 
 /***/ }),

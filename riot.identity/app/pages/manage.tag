@@ -17,11 +17,12 @@ import '../components/validation-summary.tag'
             0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a>
         </dd>
         <dt>Phone Number:</dt>
-        <dd>
+        <dd if={json.indexViewModel}>
           
           <div if={json.indexViewModel.phoneNumber}>
             {json.indexViewModel.phoneNumber}
             <a href="#account/manage-change-phone" class="btn-bracketed">Change</a>
+            <a onclick={onRemovePhoneNumber} class="btn-bracketed">Remove</a>
           </div>
           <div if={!json.indexViewModel.phoneNumber}> 
             None
@@ -44,45 +45,59 @@ import '../components/validation-summary.tag'
 	var self = this;
   self.mixin("forms-mixin");
 	self.name = 'manage';
-  self.items =  [
-      { title: 'Account', route: '/account'},
-      { title: 'Projects', route: '/main/projects'}
-  ];
 
+  self.json = {};
 	self.status = {};
-    self.onSubmit = (e) =>{
-        let myForm = $('#myForm');
-        let data = self.toJSONString(myForm[0]);
 
-        var disabled = $('#submitButton').hasClass("disabled");
-        if(!disabled) {
-            console.log('valid');
-            e.preventDefault();
-            riot.control.trigger(riot.EVT.accountStore.in.register,data);
+  self.onSubmit = (e) =>{
+      let myForm = $('#myForm');
+      let data = self.toJSONString(myForm[0]);
 
-        }else{
-            console.log('invalid');
-        }
-    }
-    self.route = (evt) => {
-        riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
-      };
+      var disabled = $('#submitButton').hasClass("disabled");
+      if(!disabled) {
+          console.log('valid');
+          e.preventDefault();
+          riot.control.trigger(riot.EVT.accountStore.in.register,data);
+
+      }else{
+          console.log('invalid');
+      }
+  }
+
+  self.route = (evt) => {
+      riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
+    };
     
 
 	self.on('mount', function() {
 		riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete,
       		self._onUserManageInfoComplete);
+    riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete,
+          self._onRemovePhoneNumberComplete);
 		riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
     })
+
 	self.on('unmount', function() {
-   		riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete,
+   	riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete,
       		self._onUserManageInfoComplete);
+    riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete,
+          self._onRemovePhoneNumberComplete);
     })
-    self._onUserManageInfoComplete = () =>{
+
+  self.onRemovePhoneNumber = (evt) =>{
+    riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
+    }
+
+  self._onRemovePhoneNumberComplete = () =>{
+    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+    }
+
+  self._onUserManageInfoComplete = () =>{
 	    self.json = riot.state.manage.json;
       self.status = self.json;
     	self.update();
     }
+
 	self.generateAnError = () => {
   		riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
   	};
