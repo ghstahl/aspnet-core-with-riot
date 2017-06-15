@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
+    enableTwoFactorResult: Constants.NAMESPACE + 'enable-two-factor-result',
     removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
     removePhoneNumberResult: Constants.NAMESPACE + 'remove-phone-number-result',
     verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
@@ -3475,6 +3477,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    enableTwoFactorComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
@@ -3509,6 +3512,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
+      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
@@ -3536,6 +3541,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
+      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
@@ -3793,11 +3800,32 @@ var AccountStore = function () {
   };
 
   AccountStore.prototype._onRemovePhoneNumberResult = function _onRemovePhoneNumberResult(result, ack) {
-    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, result, ack);
     if (result.error || !result.response.ok) {
-      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'verifyPhoneNumber-1234' });
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'removePhoneNumber-1234' });
     } else {
       this.trigger(Constants.WELLKNOWN_EVENTS.out.removePhoneNumberComplete);
+    }
+  };
+
+  AccountStore.prototype._onEnableTwoFactor = function _onEnableTwoFactor(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, body);
+
+    riot.state.manage = {};
+    var url = '/Manage/EnableTwoFactorAuthenticationJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onEnableTwoFactorResult = function _onEnableTwoFactorResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'enableTwoFactor-1234' });
+    } else {
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.enableTwoFactorComplete);
     }
   };
 
@@ -6765,32 +6793,22 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Validator = function () {
-  function Validator() {
-    _classCallCheck(this, Validator);
-  }
-
-  Validator.validateType = function validateType(obj, type, name) {
-    if (!obj) {
-      throw new Error(name + ': is NULL');
+Object.defineProperty(exports, "__esModule", { value: true });
+var Validator = (function () {
+    function Validator() {
     }
-    if (!(obj instanceof type)) {
-      throw new Error(name + ': is NOT of type:' + type.name);
-    }
-  };
-
-  return Validator;
-}();
-
+    Validator.validateType = function (obj, type, name) {
+        if (!obj) {
+            throw new Error(name + ': is NULL');
+        }
+        if (!(obj instanceof type)) {
+            throw new Error(name + ': is NOT of type:' + type.name);
+        }
+    };
+    return Validator;
+}());
 exports.default = Validator;
-module.exports = exports['default'];
+
 
 /***/ }),
 /* 16 */
@@ -6805,13 +6823,11 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension() {
+var RiotRouteExtension = function RiotRouteExtension(riot) {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
-  self.name = 'RiotRouteExtension';
-  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6915,61 +6931,6 @@ module.exports = exports['default'];
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var RandomString = function RandomString() {
-  _classCallCheck(this, RandomString);
-
-  var self = this;
-
-  self.name = 'RandomString';
-  self.namespace = self.name + ':';
-  self.generateRandomString = function (length) {
-    if (length && length > 16) {
-      length = 16;
-    } else {
-      length = 16;
-    }
-
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-  self.hashString = function (str) {
-    var hash = 5381;
-    var i = str.length;
-
-    while (i) {
-      hash = hash * 33 ^ str.charCodeAt(--i);
-    }
-    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-    * integers. Since we want the results to be always positive, convert the
-    * signed int to an unsigned by doing an unsigned bitshift. */
-    return hash >>> 0;
-  };
-  self.randomHash = function (length) {
-    return self.hashString(self.generateRandomString(length));
-  };
-};
-
-exports.default = RandomString;
-module.exports = exports['default'];
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -7016,6 +6977,49 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var RandomString = (function () {
+    function RandomString() {
+    }
+    RandomString.prototype.generateRandomString = function (length) {
+        if (length && length > 16) {
+            length = 16;
+        }
+        else {
+            length = 16;
+        }
+        var text = '';
+        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    };
+    RandomString.prototype.hashString = function (str) {
+        var hash = 5381;
+        var i = str.length;
+        while (i) {
+            hash = (hash * 33) ^ str.charCodeAt(--i);
+        }
+        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+        * integers. Since we want the results to be always positive, convert the
+        * signed int to an unsigned by doing an unsigned bitshift. */
+        return hash >>> 0;
+    };
+    RandomString.prototype.randomHash = function (str) {
+        return this.hashString(this.generateRandomString(length));
+    };
+    return RandomString;
+}());
+exports.default = RandomString;
+
+
+/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -7060,7 +7064,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(18);
+var _randomString = __webpack_require__(19);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7120,7 +7124,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(19);
+__webpack_require__(18);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7133,7 +7137,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default();
+    this._masterEventTable = new _masterEventTable2.default(riot);
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7157,7 +7161,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default();
+    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7825,7 +7829,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-change-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd> </dd> </dl> </div>', '', '', function (opts) {
+riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="/Manage/ChangePassword">Change</a> </dd> <dt>External Logins:</dt> <dd> 0 <a class="btn-bracketed" href="/Manage/ManageLogins">Manage</a> </dd> <dt>Phone Number:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
@@ -7861,6 +7865,10 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div> <h4>Change your account
     riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete, self._onUserManageInfoComplete);
     riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete, self._onRemovePhoneNumberComplete);
   });
+
+  self.onToggleTwoFactor = function (evt) {
+    riot.control.trigger(riot.EVT.accountStore.in.enableTwoFactor, { enable: !self.json.indexViewModel.twoFactor });
+  };
 
   self.onRemovePhoneNumber = function (evt) {
     riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);

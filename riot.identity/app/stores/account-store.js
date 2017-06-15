@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    enableTwoFactor: Constants.NAMESPACE + 'enable-two-factor',
+    enableTwoFactorResult: Constants.NAMESPACE + 'enable-two-factor-result',
     removePhoneNumber: Constants.NAMESPACE + 'remove-phone-number',
     removePhoneNumberResult: Constants.NAMESPACE + 'remove-phone-number-result',
     verifyPhoneNumber: Constants.NAMESPACE + 'verify-phone-number',
@@ -28,6 +30,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    enableTwoFactorComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberoComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
@@ -56,6 +59,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
+      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
       this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
@@ -82,6 +87,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
+      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
       this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
@@ -337,11 +344,31 @@ export default class AccountStore {
   }
 
   _onRemovePhoneNumberResult(result, ack) {
-    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, result, ack);
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, result, ack);
     if (result.error || !result.response.ok) {
-      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'verifyPhoneNumber-1234'});
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'removePhoneNumber-1234'});
     } else {
       this.trigger(Constants.WELLKNOWN_EVENTS.out.removePhoneNumberComplete);
+    }
+  }
+  _onEnableTwoFactor(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, body);
+
+    riot.state.manage = {};
+    let url = '/Manage/EnableTwoFactorAuthenticationJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body }, myAck);
+  }
+
+  _onEnableTwoFactorResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'enableTwoFactor-1234'});
+    } else {
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.enableTwoFactorComplete);
     }
   }
 }

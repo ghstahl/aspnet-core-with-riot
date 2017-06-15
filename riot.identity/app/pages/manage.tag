@@ -21,7 +21,7 @@ import '../components/validation-summary.tag'
           
           <div if={json.indexViewModel.phoneNumber}>
             {json.indexViewModel.phoneNumber}
-            <a href="#account/manage-change-phone" class="btn-bracketed">Change</a>
+            <a href="#account/manage-add-phone" class="btn-bracketed">Change</a>
             <a onclick={onRemovePhoneNumber} class="btn-bracketed">Remove</a>
           </div>
           <div if={!json.indexViewModel.phoneNumber}> 
@@ -31,70 +31,76 @@ import '../components/validation-summary.tag'
         </dd>
 
         <dt>Two-Factor Authentication:</dt>
-        <dd>
-                  
+        <dd if={json.indexViewModel}>
+          <div if={json.indexViewModel.twoFactor}>
+         	<a onclick={onToggleTwoFactor} class="btn-bracketed">Disable</a>
+          </div>
+          <div if={!json.indexViewModel.twoFactor}>
+          	<a onclick={onToggleTwoFactor} class="btn-bracketed">Enable</a>
+          </div>
         </dd>
     </dl>
 </div>
 
-
-
-
-
 <script>
 	var self = this;
-  self.mixin("forms-mixin");
+  	self.mixin("forms-mixin");
 	self.name = 'manage';
 
-  self.json = {};
+  	self.json = {};
 	self.status = {};
 
-  self.onSubmit = (e) =>{
-      let myForm = $('#myForm');
-      let data = self.toJSONString(myForm[0]);
+  	self.onSubmit = (e) =>{
+		let myForm = $('#myForm');
+		let data = self.toJSONString(myForm[0]);
 
-      var disabled = $('#submitButton').hasClass("disabled");
-      if(!disabled) {
-          console.log('valid');
-          e.preventDefault();
-          riot.control.trigger(riot.EVT.accountStore.in.register,data);
+		var disabled = $('#submitButton').hasClass("disabled");
+		if(!disabled) {
+		  console.log('valid');
+		  e.preventDefault();
+		  riot.control.trigger(riot.EVT.accountStore.in.register,data);
 
-      }else{
-          console.log('invalid');
-      }
-  }
+		}else{
+		  console.log('invalid');
+		}
+  	}
 
-  self.route = (evt) => {
-      riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
+  	self.route = (evt) => {
+    	riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,evt.item.route);
     };
     
 
 	self.on('mount', function() {
 		riot.control.on(riot.EVT.accountStore.out.userManageInfoComplete,
       		self._onUserManageInfoComplete);
-    riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete,
+    	riot.control.on(riot.EVT.accountStore.out.removePhoneNumberComplete,
           self._onRemovePhoneNumberComplete);
 		riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
     })
 
 	self.on('unmount', function() {
-   	riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete,
+   		riot.control.off(riot.EVT.accountStore.out.userManageInfoComplete,
       		self._onUserManageInfoComplete);
-    riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete,
+    	riot.control.off(riot.EVT.accountStore.out.removePhoneNumberComplete,
           self._onRemovePhoneNumberComplete);
     })
 
-  self.onRemovePhoneNumber = (evt) =>{
-    riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
+	
+  	self.onToggleTwoFactor = (evt) =>{
+		riot.control.trigger(riot.EVT.accountStore.in.enableTwoFactor,{enable:!self.json.indexViewModel.twoFactor});
     }
 
-  self._onRemovePhoneNumberComplete = () =>{
-    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+  	self.onRemovePhoneNumber = (evt) =>{
+    	riot.control.trigger(riot.EVT.accountStore.in.removePhoneNumber);
     }
 
-  self._onUserManageInfoComplete = () =>{
-	    self.json = riot.state.manage.json;
-      self.status = self.json;
+  	self._onRemovePhoneNumberComplete = () =>{
+    	riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+  	}
+
+  	self._onUserManageInfoComplete = () =>{
+		self.json = riot.state.manage.json;
+      	self.status = self.json;
     	self.update();
     }
 
