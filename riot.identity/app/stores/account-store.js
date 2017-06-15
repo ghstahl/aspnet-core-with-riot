@@ -268,7 +268,7 @@ export default class AccountStore {
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'verifyCode-1234'});
     } else {
-      riot.state.verifyCode.status = result.json.status;
+      riot.state.verifyCode.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
     }
   }

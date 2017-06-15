@@ -3723,7 +3723,7 @@ var AccountStore = function () {
     if (result.error || !result.response.ok) {
       riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'verifyCode-1234' });
     } else {
-      riot.state.verifyCode.status = result.json.status;
+      riot.state.verifyCode.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
     }
   };
@@ -8301,11 +8301,6 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-            status: {
-                errors: null
-            }
-        };
     });
 
     self.on('unmount', function () {
@@ -8313,9 +8308,9 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
     });
 
     self._onVerifyCodeComplete = function () {
-        self.status = riot.state.verifyCode.status;
-        self.update();
-        if (self.status.ok) {
+        self.json = riot.state.verifyCode.json;
+        var status = self.json.status;
+        if (status.ok) {
             var returnUrl = '/';
             if (riot.state.returnUrl) {
                 returnUrl = riot.state.returnUrl;
@@ -8323,8 +8318,11 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
             riot.state.returnUrl = undefined;
             riot.control.trigger(riot.EVT.accountStore.in.redirect, returnUrl);
         } else {
-            if (self.status.IsLockedOut) {
+            if (status.IsLockedOut) {
                 riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, '/account/locked-out');
+            } else {
+                self.status.errors = status.errors;
+                self.update();
             }
         }
     };

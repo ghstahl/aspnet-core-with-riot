@@ -76,13 +76,7 @@ import '../components/validation-summary.tag'
 
         let myForm = $('#myForm');
         myForm.validator();
-        myForm.on('submit', self.onSubmit);
-        riot.state.register = {
-        	status:{
-        		errors:null
-        	}
-        };
-        
+        myForm.on('submit', self.onSubmit); 
     })
 
 	self.on('unmount', function() {
@@ -91,9 +85,9 @@ import '../components/validation-summary.tag'
     })
 
     self._onVerifyCodeComplete = () =>{
-	    self.status = riot.state.verifyCode.status;
-    	self.update();
-    	if(self.status.ok){
+	    self.json = riot.state.verifyCode.json;
+        let status = self.json.status;
+    	if(status.ok){
             let returnUrl = '/';
             if (riot.state.returnUrl) {
               returnUrl = riot.state.returnUrl;
@@ -101,9 +95,13 @@ import '../components/validation-summary.tag'
             riot.state.returnUrl = undefined;
             riot.control.trigger(riot.EVT.accountStore.in.redirect,returnUrl);
     	}else{
-    		if(self.status.IsLockedOut){
+    		if(status.IsLockedOut){
     			riot.control.trigger(riot.EVT.routeStore.in.routeDispatch,'/account/locked-out');
-    		}
+    		}else{
+                self.status.errors = status.errors;
+                self.update();
+            }
+           
     	}
     }
 
