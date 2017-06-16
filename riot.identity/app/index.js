@@ -29,6 +29,7 @@ riot.state.manageAddPhone = {};
 riot.state.verifyPhoneNumber = {};
 riot.state.changePassword = {};
 riot.state.manageLogins = {};
+riot.state.removeExternalLogin = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

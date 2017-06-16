@@ -5,6 +5,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    removeExternalLogin: Constants.NAMESPACE + 'remove-external-login',
+    removeExternalLoginResult: Constants.NAMESPACE + 'remove-external-login-result',
     externalLogins: Constants.NAMESPACE + 'external-logins',
     externalLoginsResult: Constants.NAMESPACE + 'external-logins-result',
     changePassword: Constants.NAMESPACE + 'change-password',
@@ -34,6 +36,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    removeExternalLoginComplete: Constants.NAMESPACE + 'remove-external-login-complete',
     externalLoginsComplete: Constants.NAMESPACE + 'external-logins-complete',
     changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
     enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
@@ -65,6 +68,8 @@ export default class AccountStore {
 
   bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
+      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
       this.on(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
@@ -97,6 +102,8 @@ export default class AccountStore {
   }
   unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
+      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
       this.off(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
@@ -423,6 +430,27 @@ export default class AccountStore {
     } else {
       riot.state.manageLogins.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.externalLoginsComplete);
+    }
+  }
+  _onRemoveExternalLogin(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, body);
+
+    riot.state.removeExternalLogin = {};
+    let url = '/Manage/RemoveLoginJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, {method: 'POST', body: body }, myAck);
+  }
+
+  _onRemoveExternalLoginResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'removeExternalLogin-1234'});
+    } else {
+      riot.state.removeExternalLogin.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.removeExternalLoginComplete);
     }
   }
 }

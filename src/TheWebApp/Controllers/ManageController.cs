@@ -237,29 +237,6 @@ namespace TheWebApp.Controllers
             response.status.ok = true;
             return Json(response);
         }
-        
-        //
-        // POST: /Manage/RiotLinkLogin
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LinkLoginJson(string provider)
-        {
-            dynamic response = MakeInitialStatusResponse();
-
-            var user = await GetCurrentUserAsync();
-            if (user == null)
-            {
-                return Json(response);
-            }
-
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
-
-            // Request a redirect to the external login provider to link a login for the current user
-            var redirectUrl = Url.Action(nameof(RiotLinkLoginCallback), "Manage");
-            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, _userManager.GetUserId(User));
-            return Challenge(properties, provider);
-        }
 
         //
         // POST: /Manage/RiotLinkLogin
@@ -301,6 +278,28 @@ namespace TheWebApp.Controllers
             }
             return new RedirectResult("/RiotAccount#account/manage-external-logins");
         }
+
+        //
+        // POST: /Manage/RemoveLoginJson
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> RemoveLoginJson([FromBody]RemoveLoginViewModel account)
+        {
+            dynamic response = MakeInitialStatusResponse();
+
+            var user = await GetCurrentUserAsync();
+            if (user != null)
+            {
+                var result = await _userManager.RemoveLoginAsync(user, account.LoginProvider, account.ProviderKey);
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    response.status.ok = true;
+                }
+            }
+            return Json(response);
+        }
+
         //
         // GET: /Manage/Index
         [HttpGet]

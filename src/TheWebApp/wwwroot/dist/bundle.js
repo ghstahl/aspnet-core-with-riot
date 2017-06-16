@@ -3452,6 +3452,8 @@ Constants.NAME = 'account-store';
 Constants.NAMESPACE = Constants.NAME + ':';
 Constants.WELLKNOWN_EVENTS = {
   in: {
+    removeExternalLogin: Constants.NAMESPACE + 'remove-external-login',
+    removeExternalLoginResult: Constants.NAMESPACE + 'remove-external-login-result',
     externalLogins: Constants.NAMESPACE + 'external-logins',
     externalLoginsResult: Constants.NAMESPACE + 'external-logins-result',
     changePassword: Constants.NAMESPACE + 'change-password',
@@ -3481,6 +3483,7 @@ Constants.WELLKNOWN_EVENTS = {
     verifyCodeResult: Constants.NAMESPACE + 'verifyCode-result'
   },
   out: {
+    removeExternalLoginComplete: Constants.NAMESPACE + 'remove-external-login-complete',
     externalLoginsComplete: Constants.NAMESPACE + 'external-logins-complete',
     changePasswordComplete: Constants.NAMESPACE + 'change-password-complete',
     enableTwoFactorComplete: Constants.NAMESPACE + 'enable-two-factor-complete',
@@ -3518,6 +3521,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
+      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
+      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
       this.on(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
@@ -3551,6 +3556,8 @@ var AccountStore = function () {
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
+      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
+      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
       this.off(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
@@ -3882,6 +3889,28 @@ var AccountStore = function () {
     } else {
       riot.state.manageLogins.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.externalLoginsComplete);
+    }
+  };
+
+  AccountStore.prototype._onRemoveExternalLogin = function _onRemoveExternalLogin(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, body);
+
+    riot.state.removeExternalLogin = {};
+    var url = '/Manage/RemoveLoginJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, { method: 'POST', body: body }, myAck);
+  };
+
+  AccountStore.prototype._onRemoveExternalLoginResult = function _onRemoveExternalLoginResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'removeExternalLogin-1234' });
+    } else {
+      riot.state.removeExternalLogin.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.removeExternalLoginComplete);
     }
   };
 
@@ -6849,22 +6878,32 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var Validator = (function () {
-    function Validator() {
-    }
-    Validator.validateType = function (obj, type, name) {
-        if (!obj) {
-            throw new Error(name + ': is NULL');
-        }
-        if (!(obj instanceof type)) {
-            throw new Error(name + ': is NOT of type:' + type.name);
-        }
-    };
-    return Validator;
-}());
-exports.default = Validator;
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Validator = function () {
+  function Validator() {
+    _classCallCheck(this, Validator);
+  }
+
+  Validator.validateType = function validateType(obj, type, name) {
+    if (!obj) {
+      throw new Error(name + ': is NULL');
+    }
+    if (!(obj instanceof type)) {
+      throw new Error(name + ': is NOT of type:' + type.name);
+    }
+  };
+
+  return Validator;
+}();
+
+exports.default = Validator;
+module.exports = exports['default'];
 
 /***/ }),
 /* 16 */
@@ -6879,11 +6918,13 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension(riot) {
+var RiotRouteExtension = function RiotRouteExtension() {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
+  self.name = 'RiotRouteExtension';
+  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -6987,6 +7028,61 @@ module.exports = exports['default'];
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var RandomString = function RandomString() {
+  _classCallCheck(this, RandomString);
+
+  var self = this;
+
+  self.name = 'RandomString';
+  self.namespace = self.name + ':';
+  self.generateRandomString = function (length) {
+    if (length && length > 16) {
+      length = 16;
+    } else {
+      length = 16;
+    }
+
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+  self.hashString = function (str) {
+    var hash = 5381;
+    var i = str.length;
+
+    while (i) {
+      hash = hash * 33 ^ str.charCodeAt(--i);
+    }
+    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+    * integers. Since we want the results to be always positive, convert the
+    * signed int to an unsigned by doing an unsigned bitshift. */
+    return hash >>> 0;
+  };
+  self.randomHash = function (length) {
+    return self.hashString(self.generateRandomString(length));
+  };
+};
+
+exports.default = RandomString;
+module.exports = exports['default'];
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -7033,49 +7129,6 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var RandomString = (function () {
-    function RandomString() {
-    }
-    RandomString.prototype.generateRandomString = function (length) {
-        if (length && length > 16) {
-            length = 16;
-        }
-        else {
-            length = 16;
-        }
-        var text = '';
-        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < length; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
-    };
-    RandomString.prototype.hashString = function (str) {
-        var hash = 5381;
-        var i = str.length;
-        while (i) {
-            hash = (hash * 33) ^ str.charCodeAt(--i);
-        }
-        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-        * integers. Since we want the results to be always positive, convert the
-        * signed int to an unsigned by doing an unsigned bitshift. */
-        return hash >>> 0;
-    };
-    RandomString.prototype.randomHash = function (str) {
-        return this.hashString(this.generateRandomString(length));
-    };
-    return RandomString;
-}());
-exports.default = RandomString;
-
-
-/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -7120,7 +7173,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(19);
+var _randomString = __webpack_require__(18);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7180,7 +7233,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(18);
+__webpack_require__(19);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7193,7 +7246,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default(riot);
+    this._masterEventTable = new _masterEventTable2.default();
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7217,7 +7270,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
+    this._riotRouteExtension = new _riotRouteExtension2.default();
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7366,6 +7419,7 @@ riot.state.manageAddPhone = {};
 riot.state.verifyPhoneNumber = {};
 riot.state.changePassword = {};
 riot.state.manageLogins = {};
+riot.state.removeExternalLogin = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7951,7 +8005,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveLoginProvider}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td>{login.displayName}</td> <td> <div> <a onclick="{onAddLoginProvider}" name="provider" riot-value="{login.authenticationScheme}" class="btn btn-default" title="Add this {login.displayName} login to your account">Add</a> </div> </td> <td> <form method="post" class="form-horizontal" action="/Manage/RiotLinkLogin"> <div id="socialLoginList"> <p> <button type="submit" class="btn btn-default" name="provider" riot-value="{login.authenticationScheme}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> </p> </div> <input name="__RequestVerificationToken" type="hidden" riot-value="{parent.antiForgeryToken}"> </form> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
+riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveExternalLogin}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td>{login.displayName}</td> <td> <div> <form method="post" class="form-horizontal" action="/Manage/RiotLinkLogin"> <button type="submit" class="btn btn-default" name="provider" riot-value="{login.authenticationScheme}" title="Log in using your {login.authenticationScheme} account">Add</button> <input name="__RequestVerificationToken" type="hidden" riot-value="{parent.antiForgeryToken}"> </form> </div> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
@@ -7960,49 +8014,29 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
   self.status = {};
   self.logins = {};
 
-  self.onSubmit = function (e) {
-    var myForm = $('#myForm');
-    var data = self.toJSONString(myForm[0]);
-
-    var disabled = $('#submitButton').hasClass("disabled");
-    if (!disabled) {
-      console.log('valid');
-      e.preventDefault();
-      riot.control.trigger(riot.EVT.accountStore.in.register, data);
-    } else {
-      console.log('invalid');
-    }
-  };
-
-  self.route = function (evt) {
-    riot.control.trigger(riot.EVT.routeStore.in.routeDispatch, evt.item.route);
-  };
-
   self.on('mount', function () {
     riot.control.on(riot.EVT.accountStore.out.externalLoginsComplete, self._onExternalLoginsComplete);
+    riot.control.on(riot.EVT.accountStore.out.removeExternalLoginComplete, self._onFetchNewInfo);
 
-    riot.control.trigger(riot.EVT.accountStore.in.externalLogins);
+    self._onFetchNewInfo();
   });
 
   self.on('unmount', function () {
     riot.control.off(riot.EVT.accountStore.out.externalLoginsComplete, self._onExternalLoginsComplete);
+    riot.control.off(riot.EVT.accountStore.out.removeExternalLoginComplete, self._onFetchNewInfo);
   });
-
-  self.onToggleTwoFactor = function (evt) {
-    riot.control.trigger(riot.EVT.accountStore.in.enableTwoFactor, { enable: !self.json.indexViewModel.twoFactor });
-  };
 
   self.onAddLoginProvider = function (evt) {
     var url = '/Manage/RiotLinkLogin?provider=' + evt.item.login.authenticationScheme;
     riot.control.trigger(riot.EVT.accountStore.in.redirect, url);
   };
 
-  self.onRemoveLoginProvider = function (evt) {
-    riot.control.trigger(riot.EVT.accountStore.in.removeLoginProvider);
+  self.onRemoveExternalLogin = function (evt) {
+    riot.control.trigger(riot.EVT.accountStore.in.removeExternalLogin, evt.item.login);
   };
 
   self._onFetchNewInfo = function () {
-    riot.control.trigger(riot.EVT.accountStore.in.userManageInfo);
+    riot.control.trigger(riot.EVT.accountStore.in.externalLogins);
   };
 
   self._onExternalLoginsComplete = function () {
