@@ -58,6 +58,25 @@ namespace TheWebApp.Controllers
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
         }
+        dynamic MakeInitialStatusResponse()
+        {
+            dynamic response = new ExpandoObject();
+            response.status = new ExpandoObject();
+            response.status.ok = false;
+            return response;
+        }
+        //
+        // GET: /Account/InfoJson
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<JsonResult> InfoJson()
+        {
+            dynamic response = MakeInitialStatusResponse();
+            dynamic loginProviders = _signInManager.GetExternalAuthenticationSchemes().ToList();
+            response.loginProviders = loginProviders;
+            response.status.ok = true;
+            return Json(response);
+        }
 
         //
         // POST: /Account/LoginJson

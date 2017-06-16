@@ -22,6 +22,8 @@ Constants.WELLKNOWN_EVENTS = {
     userManageInfo: Constants.NAMESPACE + 'user-manage-info',
     userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
+    loginInfo: Constants.NAMESPACE + 'login-info',
+    loginInfoResult: Constants.NAMESPACE + 'login-info-result',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
     forgot: Constants.NAMESPACE + 'forgot',
@@ -43,6 +45,7 @@ Constants.WELLKNOWN_EVENTS = {
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
+    loginInfoComplete: Constants.NAMESPACE + 'login-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
@@ -85,6 +88,8 @@ export default class AccountStore {
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
+      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
+      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -119,6 +124,8 @@ export default class AccountStore {
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
+      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
+      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -286,6 +293,28 @@ export default class AccountStore {
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
     }
   }
+  _onLoginInfo(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.loginInfo, body);
+
+    riot.state.loginInfo = {};
+    let url = '/Account/InfoJson';
+    let myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.loginInfoResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, null, myAck);
+  }
+
+  _onLoginInfoResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.loginInfoResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, {code: 'loginInfo-1234'});
+    } else {
+      riot.state.loginInfo.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.loginInfoComplete);
+    }
+  }
+
   _onUserManageInfo(body) {
     console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.userManageInfo, body);
 

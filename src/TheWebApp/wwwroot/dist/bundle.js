@@ -70,7 +70,7 @@
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(riot) {/* Riot v3.5.1, @license MIT */
+/* WEBPACK VAR INJECTION */(function(riot) {/* Riot v3.6.0, @license MIT */
 (function (global, factory) {
 	 true ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -455,8 +455,87 @@ var styleManager = {
 
 /**
  * The riot template engine
- * @version v3.0.5
+ * @version v3.0.8
  */
+
+var skipRegex = (function () { //eslint-disable-line no-unused-vars
+
+  var beforeReChars = '[{(,;:?=|&!^~>%*/';
+
+  var beforeReWords = [
+    'case',
+    'default',
+    'do',
+    'else',
+    'in',
+    'instanceof',
+    'prefix',
+    'return',
+    'typeof',
+    'void',
+    'yield'
+  ];
+
+  var wordsLastChar = beforeReWords.reduce(function (s, w) {
+    return s + w.slice(-1)
+  }, '');
+
+  var RE_REGEX = /^\/(?=[^*>/])[^[/\\]*(?:(?:\\.|\[(?:\\.|[^\]\\]*)*\])[^[\\/]*)*?\/[gimuy]*/;
+  var RE_VN_CHAR = /[$\w]/;
+
+  function prev (code, pos) {
+    while (--pos >= 0 && /\s/.test(code[pos])){  }
+    return pos
+  }
+
+  function _skipRegex (code, start) {
+
+    var re = /.*/g;
+    var pos = re.lastIndex = start++;
+    var match = re.exec(code)[0].match(RE_REGEX);
+
+    if (match) {
+      var next = pos + match[0].length;
+
+      pos = prev(code, pos);
+      var c = code[pos];
+
+      if (pos < 0 || ~beforeReChars.indexOf(c)) {
+        return next
+      }
+
+      if (c === '.') {
+
+        if (code[pos - 1] === '.') {
+          start = next;
+        }
+
+      } else if (c === '+' || c === '-') {
+
+        if (code[--pos] !== c ||
+            (pos = prev(code, pos)) < 0 ||
+            !RE_VN_CHAR.test(code[pos])) {
+          start = next;
+        }
+
+      } else if (~wordsLastChar.indexOf(c)) {
+
+        var end = pos + 1;
+
+        while (--pos >= 0 && RE_VN_CHAR.test(code[pos])){  }
+        if (~beforeReWords.indexOf(code.slice(pos + 1, end))) {
+          start = next;
+        }
+      }
+    }
+
+    return start
+  }
+
+  return _skipRegex
+
+})();
+
 /**
  * riot.util.brackets
  *
@@ -486,10 +565,12 @@ var brackets = (function (UNDEF) {
 
     NEED_ESCAPE = /(?=[[\]()*+?.^$|])/g,
 
+    S_QBLOCK2 = R_STRINGS.source + '|' + /(\/)(?![*\/])/.source,
+
     FINDBRACES = {
-      '(': RegExp('([()])|'   + S_QBLOCKS, REGLOB),
-      '[': RegExp('([[\\]])|' + S_QBLOCKS, REGLOB),
-      '{': RegExp('([{}])|'   + S_QBLOCKS, REGLOB)
+      '(': RegExp('([()])|'   + S_QBLOCK2, REGLOB),
+      '[': RegExp('([[\\]])|' + S_QBLOCK2, REGLOB),
+      '{': RegExp('([{}])|'   + S_QBLOCK2, REGLOB)
     },
 
     DEFAULT = '{ }';
@@ -500,7 +581,7 @@ var brackets = (function (UNDEF) {
     /{[^}]*}/,
     /\\([{}])/g,
     /\\({)|{/g,
-    RegExp('\\\\(})|([[({])|(})|' + S_QBLOCKS, REGLOB),
+    RegExp('\\\\(})|([[({])|(})|' + S_QBLOCK2, REGLOB),
     DEFAULT,
     /^\s*{\^?\s*([$\w]+)(?:\s*,\s*(\S+))?\s+in\s+(\S.*)\s*}/,
     /(^|[^\\]){=[\S\s]*?}/
@@ -534,7 +615,7 @@ var brackets = (function (UNDEF) {
     arr[4] = _rewrite(arr[1].length > 1 ? /{[\S\s]*?}/ : _pairs[4], arr);
     arr[5] = _rewrite(pair.length > 3 ? /\\({|})/g : _pairs[5], arr);
     arr[6] = _rewrite(_pairs[6], arr);
-    arr[7] = RegExp('\\\\(' + arr[3] + ')|([[({])|(' + arr[3] + ')|' + S_QBLOCKS, REGLOB);
+    arr[7] = RegExp('\\\\(' + arr[3] + ')|([[({])|(' + arr[3] + ')|' + S_QBLOCK2, REGLOB);
     arr[8] = pair;
     return arr
   }
@@ -555,19 +636,40 @@ var brackets = (function (UNDEF) {
       pos,
       re = _bp[6];
 
+    var qblocks = [];
+    var prevStr = '';
+    var mark, lastIndex;
+
     isexpr = start = re.lastIndex = 0;
 
     while ((match = re.exec(str))) {
 
+      lastIndex = re.lastIndex;
       pos = match.index;
 
       if (isexpr) {
 
         if (match[2]) {
-          re.lastIndex = skipBraces(str, match[2], re.lastIndex);
+
+          var ch = match[2];
+          var rech = FINDBRACES[ch];
+          var ix = 1;
+
+          rech.lastIndex = lastIndex;
+          while ((match = rech.exec(str))) {
+            if (match[1]) {
+              if (match[1] === ch) { ++ix; }
+              else if (!--ix) { break }
+            } else {
+              rech.lastIndex = pushQBlock(match.index, rech.lastIndex, match[2]);
+            }
+          }
+          re.lastIndex = ix ? str.length : rech.lastIndex;
           continue
         }
+
         if (!match[3]) {
+          re.lastIndex = pushQBlock(pos, lastIndex, match[4]);
           continue
         }
       }
@@ -584,9 +686,15 @@ var brackets = (function (UNDEF) {
       unescapeStr(str.slice(start));
     }
 
+    parts.qblocks = qblocks;
+
     return parts
 
     function unescapeStr (s) {
+      if (prevStr) {
+        s = prevStr + s;
+        prevStr = '';
+      }
       if (tmpl || isexpr) {
         parts.push(s && s.replace(_bp[5], '$1'));
       } else {
@@ -594,18 +702,18 @@ var brackets = (function (UNDEF) {
       }
     }
 
-    function skipBraces (s, ch, ix) {
-      var
-        match,
-        recch = FINDBRACES[ch];
-
-      recch.lastIndex = ix;
-      ix = 1;
-      while ((match = recch.exec(s))) {
-        if (match[1] &&
-          !(match[1] === ch ? ++ix : --ix)) { break }
+    function pushQBlock(_pos, _lastIndex, slash) { //eslint-disable-line
+      if (slash) {
+        _lastIndex = skipRegex(str, _pos);
       }
-      return ix ? s.length : recch.lastIndex
+
+      if (tmpl && _lastIndex > _pos + 2) {
+        mark = '\u2057' + qblocks.length + '~';
+        qblocks.push(str.slice(_pos, _lastIndex));
+        prevStr += str.slice(start, _pos) + mark;
+        start = _lastIndex;
+      }
+      return _lastIndex
     }
   };
 
@@ -656,10 +764,12 @@ var brackets = (function (UNDEF) {
   /* istanbul ignore next: in the browser riot is always in the scope */
   _brackets.settings = typeof riot !== 'undefined' && riot.settings || {};
   _brackets.set = _reset;
+  _brackets.skipRegex = skipRegex;
 
   _brackets.R_STRINGS = R_STRINGS;
   _brackets.R_MLCOMMS = R_MLCOMMS;
   _brackets.S_QBLOCKS = S_QBLOCKS;
+  _brackets.S_QBLOCK2 = S_QBLOCK2;
 
   return _brackets
 
@@ -724,18 +834,13 @@ var tmpl = (function () {
     return new Function('E', expr + ';')    // eslint-disable-line no-new-func
   }
 
-  var
-    CH_IDEXPR = String.fromCharCode(0x2057),
-    RE_CSNAME = /^(?:(-?[_A-Za-z\xA0-\xFF][-\w\xA0-\xFF]*)|\u2057(\d+)~):/,
-    RE_QBLOCK = RegExp(brackets.S_QBLOCKS, 'g'),
-    RE_DQUOTE = /\u2057/g,
-    RE_QBMARK = /\u2057(\d+)~/g;
+  var RE_DQUOTE = /\u2057/g;
+  var RE_QBMARK = /\u2057(\d+)~/g;
 
   function _getTmpl (str) {
-    var
-      qstr = [],
-      expr,
-      parts = brackets.split(str.replace(RE_DQUOTE, '"'), 1);
+    var parts = brackets.split(str.replace(RE_DQUOTE, '"'), 1);
+    var qstr = parts.qblocks;
+    var expr;
 
     if (parts.length > 2 || parts[0]) {
       var i, j, list = [];
@@ -766,7 +871,7 @@ var tmpl = (function () {
       expr = _parseExpr(parts[1], 0, qstr);
     }
 
-    if (qstr[0]) {
+    if (qstr.length) {
       expr = expr.replace(RE_QBMARK, function (_, pos) {
         return qstr[pos]
           .replace(/\r/g, '\\r')
@@ -776,6 +881,7 @@ var tmpl = (function () {
     return expr
   }
 
+  var RE_CSNAME = /^(?:(-?[_A-Za-z\xA0-\xFF][-\w\xA0-\xFF]*)|\u2057(\d+)~):/;
   var
     RE_BREND = {
       '(': /[()]/g,
@@ -786,11 +892,8 @@ var tmpl = (function () {
   function _parseExpr (expr, asText, qstr) {
 
     expr = expr
-          .replace(RE_QBLOCK, function (s, div) {
-            return s.length > 2 && !div ? CH_IDEXPR + (qstr.push(s) - 1) + '~' : s
-          })
-          .replace(/\s+/g, ' ').trim()
-          .replace(/\ ?([[\({},?\.:])\ ?/g, '$1');
+      .replace(/\s+/g, ' ').trim()
+      .replace(/\ ?([[\({},?\.:])\ ?/g, '$1');
 
     if (expr) {
       var
@@ -881,7 +984,7 @@ var tmpl = (function () {
     return expr
   }
 
-  _tmpl.version = brackets.version = 'v3.0.5';
+  _tmpl.version = brackets.version = 'v3.0.8';
 
   return _tmpl
 
@@ -1110,7 +1213,9 @@ var misc = Object.freeze({
 });
 
 var settings$1 = extend(Object.create(brackets.settings), {
-  skipAnonymousTags: true
+  skipAnonymousTags: true,
+  // handle the auto updates on any DOM event
+  autoUpdate: true
 });
 
 /**
@@ -1140,6 +1245,9 @@ function handleEvent(dom, handler, e) {
   e.item = item;
 
   handler.call(this, e);
+
+  // avoid auto updates
+  if (!settings$1.autoUpdate) { return }
 
   if (!e.preventUpdate) {
     var p = getImmediateCustomParentTag(this);
@@ -1370,7 +1478,7 @@ var IfExpr = {
     remAttr(dom, CONDITIONAL_DIRECTIVE);
     this.tag = tag;
     this.expr = expr;
-    this.stub = document.createTextNode('');
+    this.stub = createDOMPlaceholder();
     this.pristine = dom;
 
     var p = dom.parentNode;
@@ -2117,7 +2225,7 @@ function unregister$1(name) {
   __TAG_IMPL[name] = null;
 }
 
-var version$1 = 'v3.5.1';
+var version$1 = 'v3.6.0';
 
 
 var core = Object.freeze({
@@ -3469,6 +3577,8 @@ Constants.WELLKNOWN_EVENTS = {
     userManageInfo: Constants.NAMESPACE + 'user-manage-info',
     userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
     redirect: Constants.NAMESPACE + 'redirect',
+    loginInfo: Constants.NAMESPACE + 'login-info',
+    loginInfoResult: Constants.NAMESPACE + 'login-info-result',
     login: Constants.NAMESPACE + 'login',
     loginResult: Constants.NAMESPACE + 'login-result',
     forgot: Constants.NAMESPACE + 'forgot',
@@ -3490,6 +3600,7 @@ Constants.WELLKNOWN_EVENTS = {
     removePhoneNumberComplete: Constants.NAMESPACE + 'remove-phone-number-complete',
     verifyPhoneNumberComplete: Constants.NAMESPACE + 'verify-phone-number-complete',
     userManageInfoComplete: Constants.NAMESPACE + 'user-manage-info-complete',
+    loginInfoComplete: Constants.NAMESPACE + 'login-info-complete',
     loginComplete: Constants.NAMESPACE + 'login-complete',
     forgotComplete: Constants.NAMESPACE + 'forgot-complete',
     resetComplete: Constants.NAMESPACE + 'reset-complete',
@@ -3538,6 +3649,8 @@ var AccountStore = function () {
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
+      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
+      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -3573,6 +3686,8 @@ var AccountStore = function () {
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
       this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
+      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
+      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
       this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
       this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
@@ -3739,6 +3854,28 @@ var AccountStore = function () {
     } else {
       riot.state.verifyCode.json = result.json;
       this.trigger(Constants.WELLKNOWN_EVENTS.out.verifyCodeComplete);
+    }
+  };
+
+  AccountStore.prototype._onLoginInfo = function _onLoginInfo(body) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.loginInfo, body);
+
+    riot.state.loginInfo = {};
+    var url = '/Account/InfoJson';
+    var myAck = {
+      evt: Constants.WELLKNOWN_EVENTS.in.loginInfoResult
+    };
+
+    riot.control.trigger(riot.EVT.fetchStore.in.fetch, url, null, myAck);
+  };
+
+  AccountStore.prototype._onLoginInfoResult = function _onLoginInfoResult(result, ack) {
+    console.log(Constants.NAME, Constants.WELLKNOWN_EVENTS.in.loginInfoResult, result, ack);
+    if (result.error || !result.response.ok) {
+      riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'loginInfo-1234' });
+    } else {
+      riot.state.loginInfo.json = result.json;
+      this.trigger(Constants.WELLKNOWN_EVENTS.out.loginInfoComplete);
     }
   };
 
@@ -7420,6 +7557,7 @@ riot.state.verifyPhoneNumber = {};
 riot.state.changePassword = {};
 riot.state.manageLogins = {};
 riot.state.removeExternalLogin = {};
+riot.state.logininfo = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7845,11 +7983,13 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 
 
 var riot = __webpack_require__(0);
-riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <input type="hidden" data-val="true" data-val-required="" id="returnUrl" name="ReturnUrl" riot-value="{returnUrl}"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberMe}" type="checkbox" id="rememberMe" name="RememberMe" riot-value="{rememberMe}"> Remember me. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div> <p> There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a> for details on setting up this ASP.NET application to support logging in via external services. </p> </div> </section> </div>', '', '', function (opts) {
+riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section if="{json}"> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <input type="hidden" data-val="true" data-val-required="" id="returnUrl" name="ReturnUrl" riot-value="{returnUrl}"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberMe}" type="checkbox" id="rememberMe" name="RememberMe" riot-value="{rememberMe}"> Remember me. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <table class="table"> <tbody> <tr each="{login in logins.loginProviders}"> <td>{login.displayName}</td> <td> <div> <form method="post" class="form-horizontal" action="/Account/RiotExternalLogin"> <button type="submit" class="btn btn-default" name="provider" riot-value="{login.authenticationScheme}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> <input name="__RequestVerificationToken" type="hidden" riot-value="{parent.antiForgeryToken}"> </form> </div> </td> </tr> </tbody> </table> </section> </div>', '', '', function (opts) {
     var self = this;
+    self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
     self.mixin("forms-mixin");
     self.name = 'home';
     self.rememberMe = false;
+    self.json = undefined;
     self.returnUrl = self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
 
     self.submitTrigger = riot.EVT.accountStore.in.login;
@@ -7885,15 +8025,24 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 
     self.on('mount', function () {
         riot.control.on(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
+        riot.control.on(riot.EVT.accountStore.out.loginInfoComplete, self._onLoginInfoComplete);
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
         self.q = riot.route.query();
+
+        riot.control.trigger(riot.EVT.accountStore.in.loginInfo);
     });
 
     self.on('unmount', function () {
         riot.control.off(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
+        riot.control.off(riot.EVT.accountStore.out.loginInfoComplete, self._onLoginInfoComplete);
     });
+
+    self._onLoginInfoComplete = function () {
+        self.json = riot.state.loginInfo.json;
+        self.update();
+    };
 
     self._onLoginComplete = function () {
         if (riot.state.login.status.ok) {
@@ -8048,7 +8197,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage', '<h2>Manage your account.</h2> <div if="{json.indexViewModel}"> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="#account/change-password">Change</a> </dd> <dt>External Logins:</dt> <dd> {json.indexViewModel.logins.length} <a class="btn-bracketed" href="#account/manage-external-logins">Manage</a> </dd> <dt>Phone Number:</dt> <dd> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> </div> </dd> </dl> </div>', '', '', function (opts) {
+riot.tag2('manage', '<h2>Manage your account.</h2> <div if="{json.indexViewModel}"> <h4>Change your account settings</h4> <hr> <dl class="dl-horizontal"> <dt>Password:</dt> <dd> <a class="btn-bracketed" href="#account/change-password">Change</a> </dd> <dt>External Logins:</dt> <dd> {json.indexViewModel.logins.length} <a class="btn-bracketed" href="#account/manage-external-logins">Manage</a> </dd> <dt>Phone Number:</dt> <dd> <div if="{json.indexViewModel.phoneNumber}"> {json.indexViewModel.phoneNumber} <a href="#account/manage-add-phone" class="btn-bracketed">Change</a> <a onclick="{onRemovePhoneNumber}" class="btn-bracketed">Remove</a> </div> <div if="{!json.indexViewModel.phoneNumber}"> None <a href="#account/manage-add-phone" class="btn-bracketed">Add</a> </div> </dd> <dt>Two-Factor Authentication:</dt> <dd if="{json.indexViewModel}"> <div if="{json.indexViewModel.twoFactor}"> Enabled <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Disable</a> </div> <div if="{!json.indexViewModel.twoFactor}"> <a onclick="{onToggleTwoFactor}" class="btn-bracketed">Enable</a> Disabled </div> </dd> </dl> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';

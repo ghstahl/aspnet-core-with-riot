@@ -33,10 +33,10 @@ import '../components/validation-summary.tag'
         <dt>Two-Factor Authentication:</dt>
         <dd if={json.indexViewModel}>
           <div if={json.indexViewModel.twoFactor}>
-         	<a onclick={onToggleTwoFactor} class="btn-bracketed">Disable</a>
+         	Enabled <a onclick={onToggleTwoFactor} class="btn-bracketed">Disable</a>
           </div>
           <div if={!json.indexViewModel.twoFactor}>
-          	<a onclick={onToggleTwoFactor} class="btn-bracketed">Enable</a>
+          	<a onclick={onToggleTwoFactor} class="btn-bracketed">Enable</a> Disabled
           </div>
         </dd>
     </dl>

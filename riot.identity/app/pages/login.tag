@@ -1,7 +1,7 @@
 <login> 
 <h2>Login.</h2>
 <div class="col-md-8">
-    <section>
+    <section if={json}>
         <h4>Use a local account to log in.</h4>
         <hr />
         <form id="myForm" data-toggle="validator" role="form">
@@ -40,20 +40,36 @@
     <section>
         <h4>Use another service to log in.</h4>
         <hr />
+        <table class="table">
+          <tbody>
+            <tr each={login in logins.loginProviders}>
+              <td>{login.displayName}</td>
+              <td>
                 <div>
-                    <p>
-                        There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
-                        for details on setting up this ASP.NET application to support logging in via external services.
-                    </p>
+                  <form method="post" class="form-horizontal" action="/Account/RiotExternalLogin">
+                    <button type="submit" 
+                            class="btn btn-default" 
+                            name="provider"
+                            value="{login.authenticationScheme}"   
+                            title="Log in using your {login.authenticationScheme} account">{login.displayName}</button>
+                  
+                      <input name="__RequestVerificationToken" type="hidden" value="{parent.antiForgeryToken}" />
+                  </form>
                 </div>
+              </td>
+            </tr>
+          </tbody>
+      </table>
     </section>
 </div>
 
 <script>
 	var self = this;
+    self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
     self.mixin("forms-mixin");
 	self.name = 'home';
     self.rememberMe = false;
+    self.json = undefined;
     self.returnUrl = 
     self.items =  [
           { title: 'Register as a new user?', route: '/account/register'},
@@ -95,16 +111,29 @@
 	self.on('mount', function() {
         riot.control.on(riot.EVT.accountStore.out.loginComplete,
             self._onLoginComplete);
+        riot.control.on(riot.EVT.accountStore.out.loginInfoComplete,
+            self._onLoginInfoComplete);
         let myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
         self.q = riot.route.query();
+
+        riot.control.trigger(riot.EVT.accountStore.in.loginInfo);
+
+
     })
 
 	self.on('unmount', function() {
         riot.control.off(riot.EVT.accountStore.out.loginComplete,
             self._onLoginComplete);
+        riot.control.off(riot.EVT.accountStore.out.loginInfoComplete,
+            self._onLoginInfoComplete);
     })
+
+    self._onLoginInfoComplete = () => {
+        self.json = riot.state.loginInfo.json;
+        self.update();
+    }
 
     self._onLoginComplete = () => {
         if(riot.state.login.status.ok){
