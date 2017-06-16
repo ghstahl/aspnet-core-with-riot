@@ -3032,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(44);
+var	fixUrls = __webpack_require__(43);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -4179,7 +4179,7 @@ exports.default = SidebarStore;
 
 __webpack_require__(17);
 
-__webpack_require__(20);
+__webpack_require__(19);
 
 __webpack_require__(18);
 
@@ -4709,7 +4709,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(38), __webpack_require__(41), __webpack_require__(42), __webpack_require__(45));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(37), __webpack_require__(40), __webpack_require__(41), __webpack_require__(44));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7333,7 +7333,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7404,7 +7404,7 @@ p7HostCore.Initialize();
 riot.state.route.defaultRoute = '/account';
 riot.state.sidebar = {
   touch: 0,
-  items: [{ title: 'Account', route: '/account' }, { title: 'Projects', route: '/main/projects' }]
+  items: [{ title: 'RiotJS', route: '/account/riotjs' }]
 };
 
 riot.state.account = {};
@@ -7457,35 +7457,35 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-__webpack_require__(25);
+__webpack_require__(24);
+
+__webpack_require__(29);
 
 __webpack_require__(31);
 
-__webpack_require__(30);
+__webpack_require__(21);
+
+__webpack_require__(23);
 
 __webpack_require__(22);
 
-__webpack_require__(24);
-
-__webpack_require__(23);
+__webpack_require__(30);
 
 __webpack_require__(32);
 
 __webpack_require__(33);
 
-__webpack_require__(34);
-
-__webpack_require__(29);
-
-__webpack_require__(27);
+__webpack_require__(28);
 
 __webpack_require__(26);
 
-__webpack_require__(35);
+__webpack_require__(25);
 
-__webpack_require__(21);
+__webpack_require__(34);
 
-__webpack_require__(28);
+__webpack_require__(20);
+
+__webpack_require__(27);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7517,8 +7517,7 @@ var RouteContributer = function () {
     s.add('verify-phone-number');
     s.add('change-password');
     s.add('manage-external-logins');
-
-    s.add('projects');
+    s.add('riotjs');
 
     this.views = Array.from(s);
   };
@@ -7628,11 +7627,11 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 "use strict";
 
 
-var _nprogress = __webpack_require__(39);
+var _nprogress = __webpack_require__(38);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(43);
+__webpack_require__(42);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7668,19 +7667,6 @@ riot.tag2('loading-indicator', '', '', '', function (opts) {
 
 
 var riot = __webpack_require__(0);
-riot.tag2('pretty-json', '<pre>{JSON.stringify(this.obj, null, 2)}</pre>', '', '', function (opts) {
-    var self = this;
-    self.obj = opts.obj;
-});
-
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var riot = __webpack_require__(0);
 riot.tag2('sidebar', '<a each="{state.items}" onclick="{parent.route}" class="{parent.routeState.route === this.route? \'active list-group-item\':\'list-group-item\'}">{this.title}</a> </div>', '', '', function (opts) {
 	var self = this;
 	self.state = riot.state.sidebar;
@@ -7706,7 +7692,7 @@ riot.tag2('sidebar', '<a each="{state.items}" onclick="{parent.route}" class="{p
 });
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7764,7 +7750,7 @@ riot.tag2('change-password', '<h2>Change Password.</h2> <form id="myForm" data-t
 });
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7790,7 +7776,7 @@ riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"
 });
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7800,7 +7786,7 @@ var riot = __webpack_require__(0);
 riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Please check your email to reset your password. </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7852,7 +7838,7 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 });
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7934,7 +7920,7 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section> <h4>Use a l
 });
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7985,7 +7971,7 @@ riot.tag2('manage-add-phone', '<h2>Add Phone Number.</h2> <form id="myForm" data
 });
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7995,7 +7981,7 @@ var riot = __webpack_require__(0);
 riot.tag2('manage-change-phone', '<h2>manage-change-phone</h2> <p> placeholder </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8052,7 +8038,7 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
 });
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8126,76 +8112,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div if="{json.indexViewModel
 });
 
 /***/ }),
-/* 30 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-__webpack_require__(19);
-
-var riot = __webpack_require__(0);
-
-
-riot.tag2('projects', '<div each="{component in components}" class="panel panel-default"> <div class="panel-heading"> <h3 class="panel-title">{component.key}</h3> </div> <div class="panel-body"> <div class="well well-lg"> This will load a mini spa which has been pre-bundled. This mini spa was built using the riotjs-partial-tag nested project. </div> <a onclick="{parent.loadMyComponentsSPA}" class="{component.state.loaded == false?\'btn btn-default btn-lg\':\'disabled btn btn-default btn-lg\'}"> Load Component</a> <a onclick="{parent.unloadMyComponentsSPA}" class="{component.state.loaded == true?\'btn btn-default btn-lg\':\'disabled btn btn-default btn-lg\'}"> Unload Component</a> <a onclick="{this.clearLocalStorage}" class="btn btn-primary btn-lg"> Clear Local Storage</a> <div class="spacer"></div> <pretty-json obj="{component}"></pretty-json> </div> </div>', '', '', function (opts) {
-	var self = this;
-	self.mixin("opts-mixin");
-	self.name = 'projects';
-
-	self.on('before-mount', function () {
-		if (riot.state.projects === undefined) {
-			riot.state.projects = { loaded: false, text: "Not Loaded Yet..." };
-		}
-
-		if (riot.state.componentLoaderState != null && riot.state.componentLoaderState.components != null) {
-			self.components = self.getComponentsArray();
-		}
-	});
-
-	self.getComponentsArray = function () {
-		var result = [];
-		riot.state.componentLoaderState.components.forEach(function (value, key, map) {
-			result.push(value);
-		});
-		return result;
-	};
-
-	self.on('mount', function () {
-		console.log(self.name, 'mount');
-		riot.control.on(riot.EVT.componentLoaderStore.out.componentLoaderStoreStateUpdated, self.onComponentLoaderStoreStateUpdated);
-	});
-
-	self.on('unmount', function () {
-		console.log(self.name, 'unmount');
-		riot.control.off(riot.EVT.componentLoaderStore.out.componentLoaderStoreStateUpdated, self.onComponentLoaderStoreStateUpdated);
-	});
-
-	self.onComponentLoaderStoreStateUpdated = function () {
-		console.log(self.name, riot.EVT.componentLoaderStore.out.componentLoaderStoreStateUpdated);
-		if (riot.state.componentLoaderState != null && riot.state.componentLoaderState.components != null) {
-			self.components = self.getComponentsArray();
-			self.update();
-		}
-	};
-
-	self.clearLocalStorage = function () {
-		riot.control.trigger(riot.EVT.localStorageStore.in.localstorageClear);
-	};
-	self.loadMyComponentsSPA = function (e) {
-		var component = e.item.component;
-		var key = component.key;
-		riot.control.trigger(riot.EVT.componentLoaderStore.in.loadDynamicComponent, key);
-	};
-
-	self.unloadMyComponentsSPA = function (e) {
-		var component = e.item.component;
-		var key = component.key;
-		riot.control.trigger(riot.EVT.componentLoaderStore.in.unloadDynamicComponent, key);
-	};
-});
-
-/***/ }),
-/* 31 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8252,7 +8169,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 32 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8310,7 +8227,17 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 33 */
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var riot = __webpack_require__(0);
+riot.tag2('riotjs', '<h1>Built with Riotjs.</h1> <a href="http://riotjs.com/" class="btn btn-default">riotjs.com</a>', '', '', function (opts) {});
+
+/***/ }),
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8372,7 +8299,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8453,7 +8380,7 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8523,7 +8450,7 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
 });
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8537,7 +8464,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8551,7 +8478,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8726,7 +8653,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -9212,7 +9139,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -9350,12 +9277,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(40);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(39);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9707,7 +9634,7 @@ route.parser();
 
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9733,13 +9660,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(37);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9764,7 +9691,7 @@ if(false) {
 }
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports) {
 
 
@@ -9859,7 +9786,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports) {
 
 (function(self) {

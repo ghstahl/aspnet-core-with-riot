@@ -12,8 +12,7 @@ riot.state.route.defaultRoute = '/account';
 riot.state.sidebar = {
   touch: 0,
   items: [
-      { title: 'Account', route: '/account'},
-      { title: 'Projects', route: '/main/projects'}
+      { title: 'RiotJS', route: '/account/riotjs'}
   ]
 };
 

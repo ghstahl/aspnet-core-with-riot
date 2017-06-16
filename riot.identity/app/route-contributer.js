@@ -1,7 +1,7 @@
 
 import './pages/login.tag';
 import './pages/register.tag';
-import './pages/projects.tag';
+import './pages/riotjs.tag';
 import './pages/error.tag';
 import './pages/forgot.tag';
 import './pages/forgot-confirmation.tag';
@@ -41,8 +41,7 @@ export default class RouteContributer {
     s.add('verify-phone-number');
     s.add('change-password');
     s.add('manage-external-logins');
-
-    s.add('projects');
+    s.add('riotjs');
 
     this.views = Array.from(s);
 
