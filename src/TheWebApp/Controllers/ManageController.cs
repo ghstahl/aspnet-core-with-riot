@@ -237,7 +237,70 @@ namespace TheWebApp.Controllers
             response.status.ok = true;
             return Json(response);
         }
+        
+        //
+        // POST: /Manage/RiotLinkLogin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LinkLoginJson(string provider)
+        {
+            dynamic response = MakeInitialStatusResponse();
 
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return Json(response);
+            }
+
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+
+            // Request a redirect to the external login provider to link a login for the current user
+            var redirectUrl = Url.Action(nameof(RiotLinkLoginCallback), "Manage");
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, _userManager.GetUserId(User));
+            return Challenge(properties, provider);
+        }
+
+        //
+        // POST: /Manage/RiotLinkLogin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RiotLinkLogin(string provider)
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+
+            // Request a redirect to the external login provider to link a login for the current user
+            var redirectUrl = Url.Action(nameof(RiotLinkLoginCallback), "Manage");
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, _userManager.GetUserId(User));
+            return Challenge(properties, provider);
+        }
+
+        //
+        // GET: /Manage/RiotLinkLoginCallback
+        [HttpGet]
+        public async Task<ActionResult> RiotLinkLoginCallback()
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return View("Error");
+            }
+            var info = await _signInManager.GetExternalLoginInfoAsync(await _userManager.GetUserIdAsync(user));
+            if (info == null)
+            {
+                return new RedirectResult("/RiotAccount#account/manage-external-logins");
+            }
+            var result = await _userManager.AddLoginAsync(user, info);
+            var message = ManageMessageId.Error;
+            if (result.Succeeded)
+            {
+                message = ManageMessageId.AddLoginSuccess;
+                // Clear the existing external cookie to ensure a clean login process
+                await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+            }
+            return new RedirectResult("/RiotAccount#account/manage-external-logins");
+        }
         //
         // GET: /Manage/Index
         [HttpGet]
@@ -511,7 +574,8 @@ namespace TheWebApp.Controllers
             // Request a redirect to the external login provider to link a login for the current user
             var redirectUrl = Url.Action(nameof(LinkLoginCallback), "Manage");
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, _userManager.GetUserId(User));
-            return Challenge(properties, provider);
+            var challenge =  Challenge(properties, provider);
+            return challenge;
         }
 
         //
