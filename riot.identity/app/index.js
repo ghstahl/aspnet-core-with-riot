@@ -37,6 +37,8 @@ import OptsMixin from './mixins/opts-mixin.js';
 riot.mixin('opts-mixin', OptsMixin);
 import FormsMixin from './mixins/forms-mixin.js';
 riot.mixin('forms-mixin', FormsMixin);
+import RiotControlBindMixin from './mixins/riotcontrol-bind-mixin.js';
+riot.mixin('riotcontrol-bind-mixin', RiotControlBindMixin);
 
 // Add the stores
 // //////////////////////////////////////////////////////

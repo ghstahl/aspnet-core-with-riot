@@ -7,9 +7,9 @@ export default class FormsMixin {
     let self = this;
 
     console.log('FormsMixin:init:', self);
-    self.toJSONString = (form) =>{
+    self.toJSONString = (root) =>{
       let obj = {};
-      let elements = form.querySelectorAll('input, select, textarea');
+      let elements = root.querySelectorAll('input, select, textarea');
 
       for (let i = 0; i < elements.length; ++i) {
         let element = elements[i];
