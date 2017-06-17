@@ -63,14 +63,14 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 15);
+/******/ 	return __webpack_require__(__webpack_require__.s = 16);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(riot) {/* Riot v3.6.0, @license MIT */
+/* WEBPACK VAR INJECTION */(function(riot) {/* Riot v3.5.1, @license MIT */
 (function (global, factory) {
 	 true ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -455,87 +455,8 @@ var styleManager = {
 
 /**
  * The riot template engine
- * @version v3.0.8
+ * @version v3.0.5
  */
-
-var skipRegex = (function () { //eslint-disable-line no-unused-vars
-
-  var beforeReChars = '[{(,;:?=|&!^~>%*/';
-
-  var beforeReWords = [
-    'case',
-    'default',
-    'do',
-    'else',
-    'in',
-    'instanceof',
-    'prefix',
-    'return',
-    'typeof',
-    'void',
-    'yield'
-  ];
-
-  var wordsLastChar = beforeReWords.reduce(function (s, w) {
-    return s + w.slice(-1)
-  }, '');
-
-  var RE_REGEX = /^\/(?=[^*>/])[^[/\\]*(?:(?:\\.|\[(?:\\.|[^\]\\]*)*\])[^[\\/]*)*?\/[gimuy]*/;
-  var RE_VN_CHAR = /[$\w]/;
-
-  function prev (code, pos) {
-    while (--pos >= 0 && /\s/.test(code[pos])){  }
-    return pos
-  }
-
-  function _skipRegex (code, start) {
-
-    var re = /.*/g;
-    var pos = re.lastIndex = start++;
-    var match = re.exec(code)[0].match(RE_REGEX);
-
-    if (match) {
-      var next = pos + match[0].length;
-
-      pos = prev(code, pos);
-      var c = code[pos];
-
-      if (pos < 0 || ~beforeReChars.indexOf(c)) {
-        return next
-      }
-
-      if (c === '.') {
-
-        if (code[pos - 1] === '.') {
-          start = next;
-        }
-
-      } else if (c === '+' || c === '-') {
-
-        if (code[--pos] !== c ||
-            (pos = prev(code, pos)) < 0 ||
-            !RE_VN_CHAR.test(code[pos])) {
-          start = next;
-        }
-
-      } else if (~wordsLastChar.indexOf(c)) {
-
-        var end = pos + 1;
-
-        while (--pos >= 0 && RE_VN_CHAR.test(code[pos])){  }
-        if (~beforeReWords.indexOf(code.slice(pos + 1, end))) {
-          start = next;
-        }
-      }
-    }
-
-    return start
-  }
-
-  return _skipRegex
-
-})();
-
 /**
  * riot.util.brackets
  *
@@ -565,12 +486,10 @@ var brackets = (function (UNDEF) {
 
     NEED_ESCAPE = /(?=[[\]()*+?.^$|])/g,
 
-    S_QBLOCK2 = R_STRINGS.source + '|' + /(\/)(?![*\/])/.source,
-
     FINDBRACES = {
-      '(': RegExp('([()])|'   + S_QBLOCK2, REGLOB),
-      '[': RegExp('([[\\]])|' + S_QBLOCK2, REGLOB),
-      '{': RegExp('([{}])|'   + S_QBLOCK2, REGLOB)
+      '(': RegExp('([()])|'   + S_QBLOCKS, REGLOB),
+      '[': RegExp('([[\\]])|' + S_QBLOCKS, REGLOB),
+      '{': RegExp('([{}])|'   + S_QBLOCKS, REGLOB)
     },
 
     DEFAULT = '{ }';
@@ -581,7 +500,7 @@ var brackets = (function (UNDEF) {
     /{[^}]*}/,
     /\\([{}])/g,
     /\\({)|{/g,
-    RegExp('\\\\(})|([[({])|(})|' + S_QBLOCK2, REGLOB),
+    RegExp('\\\\(})|([[({])|(})|' + S_QBLOCKS, REGLOB),
     DEFAULT,
     /^\s*{\^?\s*([$\w]+)(?:\s*,\s*(\S+))?\s+in\s+(\S.*)\s*}/,
     /(^|[^\\]){=[\S\s]*?}/
@@ -615,7 +534,7 @@ var brackets = (function (UNDEF) {
     arr[4] = _rewrite(arr[1].length > 1 ? /{[\S\s]*?}/ : _pairs[4], arr);
     arr[5] = _rewrite(pair.length > 3 ? /\\({|})/g : _pairs[5], arr);
     arr[6] = _rewrite(_pairs[6], arr);
-    arr[7] = RegExp('\\\\(' + arr[3] + ')|([[({])|(' + arr[3] + ')|' + S_QBLOCK2, REGLOB);
+    arr[7] = RegExp('\\\\(' + arr[3] + ')|([[({])|(' + arr[3] + ')|' + S_QBLOCKS, REGLOB);
     arr[8] = pair;
     return arr
   }
@@ -636,40 +555,19 @@ var brackets = (function (UNDEF) {
       pos,
       re = _bp[6];
 
-    var qblocks = [];
-    var prevStr = '';
-    var mark, lastIndex;
-
     isexpr = start = re.lastIndex = 0;
 
     while ((match = re.exec(str))) {
 
-      lastIndex = re.lastIndex;
       pos = match.index;
 
       if (isexpr) {
 
         if (match[2]) {
-
-          var ch = match[2];
-          var rech = FINDBRACES[ch];
-          var ix = 1;
-
-          rech.lastIndex = lastIndex;
-          while ((match = rech.exec(str))) {
-            if (match[1]) {
-              if (match[1] === ch) { ++ix; }
-              else if (!--ix) { break }
-            } else {
-              rech.lastIndex = pushQBlock(match.index, rech.lastIndex, match[2]);
-            }
-          }
-          re.lastIndex = ix ? str.length : rech.lastIndex;
+          re.lastIndex = skipBraces(str, match[2], re.lastIndex);
           continue
         }
-
         if (!match[3]) {
-          re.lastIndex = pushQBlock(pos, lastIndex, match[4]);
           continue
         }
       }
@@ -686,15 +584,9 @@ var brackets = (function (UNDEF) {
       unescapeStr(str.slice(start));
     }
 
-    parts.qblocks = qblocks;
-
     return parts
 
     function unescapeStr (s) {
-      if (prevStr) {
-        s = prevStr + s;
-        prevStr = '';
-      }
       if (tmpl || isexpr) {
         parts.push(s && s.replace(_bp[5], '$1'));
       } else {
@@ -702,18 +594,18 @@ var brackets = (function (UNDEF) {
       }
     }
 
-    function pushQBlock(_pos, _lastIndex, slash) { //eslint-disable-line
-      if (slash) {
-        _lastIndex = skipRegex(str, _pos);
-      }
+    function skipBraces (s, ch, ix) {
+      var
+        match,
+        recch = FINDBRACES[ch];
 
-      if (tmpl && _lastIndex > _pos + 2) {
-        mark = '\u2057' + qblocks.length + '~';
-        qblocks.push(str.slice(_pos, _lastIndex));
-        prevStr += str.slice(start, _pos) + mark;
-        start = _lastIndex;
+      recch.lastIndex = ix;
+      ix = 1;
+      while ((match = recch.exec(s))) {
+        if (match[1] &&
+          !(match[1] === ch ? ++ix : --ix)) { break }
       }
-      return _lastIndex
+      return ix ? s.length : recch.lastIndex
     }
   };
 
@@ -764,12 +656,10 @@ var brackets = (function (UNDEF) {
   /* istanbul ignore next: in the browser riot is always in the scope */
   _brackets.settings = typeof riot !== 'undefined' && riot.settings || {};
   _brackets.set = _reset;
-  _brackets.skipRegex = skipRegex;
 
   _brackets.R_STRINGS = R_STRINGS;
   _brackets.R_MLCOMMS = R_MLCOMMS;
   _brackets.S_QBLOCKS = S_QBLOCKS;
-  _brackets.S_QBLOCK2 = S_QBLOCK2;
 
   return _brackets
 
@@ -834,13 +724,18 @@ var tmpl = (function () {
     return new Function('E', expr + ';')    // eslint-disable-line no-new-func
   }
 
-  var RE_DQUOTE = /\u2057/g;
-  var RE_QBMARK = /\u2057(\d+)~/g;
+  var
+    CH_IDEXPR = String.fromCharCode(0x2057),
+    RE_CSNAME = /^(?:(-?[_A-Za-z\xA0-\xFF][-\w\xA0-\xFF]*)|\u2057(\d+)~):/,
+    RE_QBLOCK = RegExp(brackets.S_QBLOCKS, 'g'),
+    RE_DQUOTE = /\u2057/g,
+    RE_QBMARK = /\u2057(\d+)~/g;
 
   function _getTmpl (str) {
-    var parts = brackets.split(str.replace(RE_DQUOTE, '"'), 1);
-    var qstr = parts.qblocks;
-    var expr;
+    var
+      qstr = [],
+      expr,
+      parts = brackets.split(str.replace(RE_DQUOTE, '"'), 1);
 
     if (parts.length > 2 || parts[0]) {
       var i, j, list = [];
@@ -871,7 +766,7 @@ var tmpl = (function () {
       expr = _parseExpr(parts[1], 0, qstr);
     }
 
-    if (qstr.length) {
+    if (qstr[0]) {
       expr = expr.replace(RE_QBMARK, function (_, pos) {
         return qstr[pos]
           .replace(/\r/g, '\\r')
@@ -881,7 +776,6 @@ var tmpl = (function () {
     return expr
   }
 
-  var RE_CSNAME = /^(?:(-?[_A-Za-z\xA0-\xFF][-\w\xA0-\xFF]*)|\u2057(\d+)~):/;
   var
     RE_BREND = {
       '(': /[()]/g,
@@ -892,8 +786,11 @@ var tmpl = (function () {
   function _parseExpr (expr, asText, qstr) {
 
     expr = expr
-      .replace(/\s+/g, ' ').trim()
-      .replace(/\ ?([[\({},?\.:])\ ?/g, '$1');
+          .replace(RE_QBLOCK, function (s, div) {
+            return s.length > 2 && !div ? CH_IDEXPR + (qstr.push(s) - 1) + '~' : s
+          })
+          .replace(/\s+/g, ' ').trim()
+          .replace(/\ ?([[\({},?\.:])\ ?/g, '$1');
 
     if (expr) {
       var
@@ -984,7 +881,7 @@ var tmpl = (function () {
     return expr
   }
 
-  _tmpl.version = brackets.version = 'v3.0.8';
+  _tmpl.version = brackets.version = 'v3.0.5';
 
   return _tmpl
 
@@ -1213,9 +1110,7 @@ var misc = Object.freeze({
 });
 
 var settings$1 = extend(Object.create(brackets.settings), {
-  skipAnonymousTags: true,
-  // handle the auto updates on any DOM event
-  autoUpdate: true
+  skipAnonymousTags: true
 });
 
 /**
@@ -1245,9 +1140,6 @@ function handleEvent(dom, handler, e) {
   e.item = item;
 
   handler.call(this, e);
-
-  // avoid auto updates
-  if (!settings$1.autoUpdate) { return }
 
   if (!e.preventUpdate) {
     var p = getImmediateCustomParentTag(this);
@@ -1478,7 +1370,7 @@ var IfExpr = {
     remAttr(dom, CONDITIONAL_DIRECTIVE);
     this.tag = tag;
     this.expr = expr;
-    this.stub = createDOMPlaceholder();
+    this.stub = document.createTextNode('');
     this.pristine = dom;
 
     var p = dom.parentNode;
@@ -2225,7 +2117,7 @@ function unregister$1(name) {
   __TAG_IMPL[name] = null;
 }
 
-var version$1 = 'v3.6.0';
+var version$1 = 'v3.5.1';
 
 
 var core = Object.freeze({
@@ -3140,7 +3032,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(43);
+var	fixUrls = __webpack_require__(44);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -3477,9 +3369,9 @@ var FormsMixin = function () {
     var self = this;
 
     console.log('FormsMixin:init:', self);
-    self.toJSONString = function (form) {
+    self.toJSONString = function (root) {
       var obj = {};
-      var elements = form.querySelectorAll('input, select, textarea');
+      var elements = root.querySelectorAll('input, select, textarea');
 
       for (var i = 0; i < elements.length; ++i) {
         var element = elements[i];
@@ -3533,6 +3425,45 @@ if (true) module.exports = OptsMixin;
 
 /***/ }),
 /* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(riot) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var RiotControlBindMixin = function () {
+  function RiotControlBindMixin() {
+    _classCallCheck(this, RiotControlBindMixin);
+  }
+
+  // init method is a special one which can initialize
+  // the mixin when it's loaded to the tag and is not
+  // accessible from the tag its mixed in
+  RiotControlBindMixin.prototype.init = function init() {
+    var self = this;
+
+    console.log('RiotControlBindMixin:init:', self);
+    self.bindHandler = function (element, index, array) {
+      riot.control.on(element.event, element.handler);
+    };
+    self.unbindHandler = function (element, index, array) {
+      riot.control.off(element.event, element.handler);
+    };
+  };
+
+  return RiotControlBindMixin;
+}();
+
+exports.default = RiotControlBindMixin;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
+
+/***/ }),
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4058,7 +3989,7 @@ exports.default = AccountStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4160,7 +4091,7 @@ exports.default = NextConfigStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4308,19 +4239,19 @@ exports.default = SidebarStore;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-__webpack_require__(17);
+__webpack_require__(18);
+
+__webpack_require__(20);
 
 __webpack_require__(19);
 
-__webpack_require__(18);
-
-var _routeContributer = __webpack_require__(16);
+var _routeContributer = __webpack_require__(17);
 
 var _routeContributer2 = _interopRequireDefault(_routeContributer);
 
@@ -4376,7 +4307,7 @@ riot.tag2('app', '<loading-indicator></loading-indicator> <div class="row"> <div
 });
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4421,7 +4352,7 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports) {
 
 /* ========================================================================
@@ -4841,12 +4772,12 @@ riot.tag2('my-next-startup', '', '', '', function (opts) {
 
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(riot) {(function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(0), __webpack_require__(37), __webpack_require__(40), __webpack_require__(41), __webpack_require__(44));
+		module.exports = factory(__webpack_require__(0), __webpack_require__(38), __webpack_require__(41), __webpack_require__(42), __webpack_require__(45));
 	else if(typeof define === 'function' && define.amd)
 		define("P7HostCore", ["riot", "js-cookie", "riot-route", "riotcontrol", "whatwg-fetch"], factory);
 	else if(typeof exports === 'object')
@@ -7015,32 +6946,22 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 "use strict";
 
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Validator = function () {
-  function Validator() {
-    _classCallCheck(this, Validator);
-  }
-
-  Validator.validateType = function validateType(obj, type, name) {
-    if (!obj) {
-      throw new Error(name + ': is NULL');
+Object.defineProperty(exports, "__esModule", { value: true });
+var Validator = (function () {
+    function Validator() {
     }
-    if (!(obj instanceof type)) {
-      throw new Error(name + ': is NOT of type:' + type.name);
-    }
-  };
-
-  return Validator;
-}();
-
+    Validator.validateType = function (obj, type, name) {
+        if (!obj) {
+            throw new Error(name + ': is NULL');
+        }
+        if (!(obj instanceof type)) {
+            throw new Error(name + ': is NOT of type:' + type.name);
+        }
+    };
+    return Validator;
+}());
 exports.default = Validator;
-module.exports = exports['default'];
+
 
 /***/ }),
 /* 16 */
@@ -7055,13 +6976,11 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var RiotRouteExtension = function RiotRouteExtension() {
+var RiotRouteExtension = function RiotRouteExtension(riot) {
   _classCallCheck(this, RiotRouteExtension);
 
   var self = this;
 
-  self.name = 'RiotRouteExtension';
-  self.namespace = self.name + ':';
   self.currentPath = '';
 
   self._defaultParser = function (path) {
@@ -7165,61 +7084,6 @@ module.exports = exports['default'];
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var RandomString = function RandomString() {
-  _classCallCheck(this, RandomString);
-
-  var self = this;
-
-  self.name = 'RandomString';
-  self.namespace = self.name + ':';
-  self.generateRandomString = function (length) {
-    if (length && length > 16) {
-      length = 16;
-    } else {
-      length = 16;
-    }
-
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-  self.hashString = function (str) {
-    var hash = 5381;
-    var i = str.length;
-
-    while (i) {
-      hash = hash * 33 ^ str.charCodeAt(--i);
-    }
-    /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-    * integers. Since we want the results to be always positive, convert the
-    * signed int to an unsigned by doing an unsigned bitshift. */
-    return hash >>> 0;
-  };
-  self.randomHash = function (length) {
-    return self.hashString(self.generateRandomString(length));
-  };
-};
-
-exports.default = RandomString;
-module.exports = exports['default'];
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var riot = __webpack_require__(14);
 riot.tag2('startup', '', '', '', function (opts) {
   var self = this;
@@ -7266,6 +7130,49 @@ riot.tag2('startup', '', '', '', function (opts) {
 });
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var RandomString = (function () {
+    function RandomString() {
+    }
+    RandomString.prototype.generateRandomString = function (length) {
+        if (length && length > 16) {
+            length = 16;
+        }
+        else {
+            length = 16;
+        }
+        var text = '';
+        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    };
+    RandomString.prototype.hashString = function (str) {
+        var hash = 5381;
+        var i = str.length;
+        while (i) {
+            hash = (hash * 33) ^ str.charCodeAt(--i);
+        }
+        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+        * integers. Since we want the results to be always positive, convert the
+        * signed int to an unsigned by doing an unsigned bitshift. */
+        return hash >>> 0;
+    };
+    RandomString.prototype.randomHash = function (str) {
+        return this.hashString(this.generateRandomString(length));
+    };
+    return RandomString;
+}());
+exports.default = RandomString;
+
+
+/***/ }),
 /* 20 */
 /***/ (function(module, exports) {
 
@@ -7310,7 +7217,7 @@ var _riotcontrol = __webpack_require__(22);
 
 var _riotcontrol2 = _interopRequireDefault(_riotcontrol);
 
-var _randomString = __webpack_require__(18);
+var _randomString = __webpack_require__(19);
 
 var _randomString2 = _interopRequireDefault(_randomString);
 
@@ -7370,7 +7277,7 @@ var _masterEventTable = __webpack_require__(17);
 
 var _masterEventTable2 = _interopRequireDefault(_masterEventTable);
 
-__webpack_require__(19);
+__webpack_require__(18);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7383,7 +7290,7 @@ var P7HostCore = function () {
   function P7HostCore() {
     _classCallCheck(this, P7HostCore);
 
-    this._masterEventTable = new _masterEventTable2.default();
+    this._masterEventTable = new _masterEventTable2.default(riot);
     this._name = 'P7HostCore';
     window.riot = riot; // TODO: ask Zeke about this
     riot.route = _riotRoute2.default;
@@ -7407,7 +7314,7 @@ var P7HostCore = function () {
         defaultRoute: 'main/home'
       }
     };
-    this._riotRouteExtension = new _riotRouteExtension2.default();
+    this._riotRouteExtension = new _riotRouteExtension2.default(riot);
 
     this._progressStore = new _progressStore2.default();
     this._dynamicJsCssLoader = new _dynamicJscssLoader2.default();
@@ -7464,13 +7371,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(35);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -7495,21 +7402,21 @@ if(false) {
 }
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(riot) {
 
-__webpack_require__(14);
-
-__webpack_require__(11);
-
-__webpack_require__(10);
+__webpack_require__(15);
 
 __webpack_require__(12);
 
-var _P7HostCore = __webpack_require__(13);
+__webpack_require__(11);
+
+__webpack_require__(13);
+
+var _P7HostCore = __webpack_require__(14);
 
 var _P7HostCore2 = _interopRequireDefault(_P7HostCore);
 
@@ -7521,15 +7428,19 @@ var _formsMixin = __webpack_require__(5);
 
 var _formsMixin2 = _interopRequireDefault(_formsMixin);
 
-var _nextConfigStore = __webpack_require__(8);
+var _riotcontrolBindMixin = __webpack_require__(7);
+
+var _riotcontrolBindMixin2 = _interopRequireDefault(_riotcontrolBindMixin);
+
+var _nextConfigStore = __webpack_require__(9);
 
 var _nextConfigStore2 = _interopRequireDefault(_nextConfigStore);
 
-var _accountStore = __webpack_require__(7);
+var _accountStore = __webpack_require__(8);
 
 var _accountStore2 = _interopRequireDefault(_accountStore);
 
-var _sidebarStore = __webpack_require__(9);
+var _sidebarStore = __webpack_require__(10);
 
 var _sidebarStore2 = _interopRequireDefault(_sidebarStore);
 
@@ -7566,6 +7477,8 @@ riot.mixin('opts-mixin', _optsMixin2.default);
 
 riot.mixin('forms-mixin', _formsMixin2.default);
 
+riot.mixin('riotcontrol-bind-mixin', _riotcontrolBindMixin2.default);
+
 // Add the stores
 // //////////////////////////////////////////////////////
 
@@ -7585,7 +7498,7 @@ riot.mount('startup');
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7595,35 +7508,35 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-__webpack_require__(24);
-
-__webpack_require__(29);
-
-__webpack_require__(31);
-
-__webpack_require__(21);
-
-__webpack_require__(23);
-
-__webpack_require__(22);
+__webpack_require__(25);
 
 __webpack_require__(30);
 
 __webpack_require__(32);
 
+__webpack_require__(22);
+
+__webpack_require__(24);
+
+__webpack_require__(23);
+
+__webpack_require__(31);
+
 __webpack_require__(33);
-
-__webpack_require__(28);
-
-__webpack_require__(26);
-
-__webpack_require__(25);
 
 __webpack_require__(34);
 
-__webpack_require__(20);
+__webpack_require__(29);
 
 __webpack_require__(27);
+
+__webpack_require__(26);
+
+__webpack_require__(35);
+
+__webpack_require__(21);
+
+__webpack_require__(28);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -7726,7 +7639,7 @@ exports.default = RouteContributer;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7759,17 +7672,17 @@ riot.tag2('header', '<div class="navbar navbar-default navbar-fixed-top"> <div c
 });
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _nprogress = __webpack_require__(38);
+var _nprogress = __webpack_require__(39);
 
 var nprogress = _interopRequireWildcard(_nprogress);
 
-__webpack_require__(42);
+__webpack_require__(43);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7798,7 +7711,7 @@ riot.tag2('loading-indicator', '', '', '', function (opts) {
 });
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7830,7 +7743,7 @@ riot.tag2('sidebar', '<a each="{state.items}" onclick="{parent.route}" class="{p
 });
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7888,7 +7801,7 @@ riot.tag2('change-password', '<h2>Change Password.</h2> <form id="myForm" data-t
 });
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7914,7 +7827,7 @@ riot.tag2('error', '<div class="panel panel-default"> <div class="panel-heading"
 });
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7924,7 +7837,7 @@ var riot = __webpack_require__(0);
 riot.tag2('forgot-confirmation', '<h2>Forgot Password Confirmation.</h2> <p> Please check your email to reset your password. </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7976,24 +7889,26 @@ riot.tag2('forgot', '<h2>Forgot your password?</h2> <form id="myForm" data-toggl
 });
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var riot = __webpack_require__(0);
-riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section if="{json}"> <h4>Use a local account to log in.</h4> <hr> <form id="myForm" data-toggle="validator" role="form"> <input type="hidden" data-val="true" data-val-required="" id="returnUrl" name="ReturnUrl" riot-value="{returnUrl}"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberMe}" type="checkbox" id="rememberMe" name="RememberMe" riot-value="{rememberMe}"> Remember me. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </form> </section> </div> <div class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <table class="table"> <tbody> <tr each="{login in logins.loginProviders}"> <td>{login.displayName}</td> <td> <div> <form method="post" class="form-horizontal" action="/Account/RiotExternalLogin"> <button type="submit" class="btn btn-default" name="provider" riot-value="{login.authenticationScheme}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> <input name="__RequestVerificationToken" type="hidden" riot-value="{parent.antiForgeryToken}"> </form> </div> </td> </tr> </tbody> </table> </section> </div>', '', '', function (opts) {
+riot.tag2('login', '<h2>Login.</h2> <div if="{json}" class="col-md-8"> <section> <h4>Use a local account to log in.</h4> <hr> <div id="myForm" data-toggle="validator" role="form"> <input type="hidden" data-val="true" data-val-required="" id="returnUrl" name="ReturnUrl" riot-value="{returnUrl}"> <div class="form-group"> <label for="inputEmail" class="control-label">Email</label> <input name="email" class="form-control" id="inputEmail" placeholder="Email" data-error="Bruh, that email address is invalid" required type="email"> <div class="help-block with-errors"></div> </div> <div class="form-group"> <label for="inputPassword" class="control-label">Password</label> <input name="password" type="password" data-minlength="6" class="form-control" id="inputPassword" placeholder="Password" required> <div class="help-block">Minimum of 6 characters</div> </div> <div class="form-group"> <div class="checkbox"> <label> <input onclick="{onRememberMe}" type="checkbox" id="rememberMe" name="RememberMe" riot-value="{rememberMe}"> Remember me. </label> <div class="help-block with-errors"></div> </div> </div> <div class="form-group"> <button id="submitButton" onclick="{onSubmit}" type="submit" class="btn btn-primary">Login</button> </div> <p each="{items}"> <a onclick="{parent.route}" item="{this}">{this.title}</a> </p> </div> </section> </div> <div if="{json}" class="col-md-4"> <section> <h4>Use another service to log in.</h4> <hr> <div each="{login in json.loginProviders}"> <button class="btn btn-default" onclick="{parent.onExternalLogin}" title="Log in using your {login.displayName} account">{login.displayName}</button> </div> </section> </div>', '', '', function (opts) {
     var self = this;
-    self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
     self.mixin("forms-mixin");
+    self.mixin('riotcontrol-bind-mixin');
+
     self.name = 'home';
     self.rememberMe = false;
     self.json = undefined;
-    self.returnUrl = self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
+    self.items = [{ title: 'Register as a new user?', route: '/account/register' }, { title: 'Forgot your password?', route: '/account/forgot' }];
 
     self.submitTrigger = riot.EVT.accountStore.in.login;
     self.onSubmit = function (e) {
+
         var myForm = $('#myForm');
         var data = self.toJSONString(myForm[0]);
 
@@ -8024,8 +7939,8 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section if="{json}">
     });
 
     self.on('mount', function () {
-        riot.control.on(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
-        riot.control.on(riot.EVT.accountStore.out.loginInfoComplete, self._onLoginInfoComplete);
+        self.riotHandlers.forEach(self.bindHandler);
+
         var myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
@@ -8035,15 +7950,13 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section if="{json}">
     });
 
     self.on('unmount', function () {
-        riot.control.off(riot.EVT.accountStore.out.loginComplete, self._onLoginComplete);
-        riot.control.off(riot.EVT.accountStore.out.loginInfoComplete, self._onLoginInfoComplete);
+        self.riotHandlers.forEach(self.unbindHandler);
     });
 
     self._onLoginInfoComplete = function () {
         self.json = riot.state.loginInfo.json;
         self.update();
     };
-
     self._onLoginComplete = function () {
         if (riot.state.login.status.ok) {
             var returnUrl = '/';
@@ -8062,14 +7975,46 @@ riot.tag2('login', '<h2>Login.</h2> <div class="col-md-8"> <section if="{json}">
             }
         }
     };
+    self.onExternalLogin = function (evt) {
+        var returnUrl = riot.state.returnUrl;
+        var item = evt.item;
+        var antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+        var body = {
+            __RequestVerificationToken: antiForgeryToken,
+            returnUrl: returnUrl,
+            provider: item.login.authenticationScheme
+        };
+        self.externalPost('/Account/ExternalLogin', body);
+    };
+    self.externalPost = function (path, params, method) {
+        method = method || "post";
 
+        var form = document.createElement("form");
+        form.setAttribute("method", method);
+        form.setAttribute("action", path);
+
+        for (var key in params) {
+            if (params.hasOwnProperty(key)) {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
+                hiddenField.setAttribute("name", key);
+                hiddenField.setAttribute("value", params[key]);
+
+                form.appendChild(hiddenField);
+            }
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    };
     self.generateAnError = function () {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
     };
+    self.riotHandlers = [{ event: riot.EVT.accountStore.out.loginComplete, handler: self._onLoginComplete }, { event: riot.EVT.accountStore.out.loginInfoComplete, handler: self._onLoginInfoComplete }];
 });
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8120,7 +8065,7 @@ riot.tag2('manage-add-phone', '<h2>Add Phone Number.</h2> <form id="myForm" data
 });
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8130,7 +8075,7 @@ var riot = __webpack_require__(0);
 riot.tag2('manage-change-phone', '<h2>manage-change-phone</h2> <p> placeholder </p>', '', '', function (opts) {});
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8187,7 +8132,7 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
 });
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8261,7 +8206,7 @@ riot.tag2('manage', '<h2>Manage your account.</h2> <div if="{json.indexViewModel
 });
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8318,7 +8263,7 @@ riot.tag2('register', '<h2>Register.</h2> <form id="myForm" data-toggle="validat
 });
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8376,7 +8321,7 @@ riot.tag2('reset-password', '<h2>Reset Password.</h2> <form id="myForm" data-tog
 });
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8386,7 +8331,7 @@ var riot = __webpack_require__(0);
 riot.tag2('riotjs', '<h1>Built with Riotjs.</h1> <a href="http://riotjs.com/" class="btn btn-default">riotjs.com</a>', '', '', function (opts) {});
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8448,7 +8393,7 @@ riot.tag2('send-verification-code', '<h2>Send Verification Code.</h2> <form id="
 });
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8529,7 +8474,7 @@ riot.tag2('verify-code', '<h2>Verify.</h2> <form id="myForm" data-toggle="valida
 });
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8599,7 +8544,7 @@ riot.tag2('verify-phone-number', '<h2>Verify Phone Number.</h2> <form id="myForm
 });
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8613,7 +8558,7 @@ exports.push([module.i, "/*\r\n * Base structure\r\n */\r\n\r\n/* Move down cont
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(3)(undefined);
@@ -8627,7 +8572,7 @@ exports.push([module.i, "/* Make clicks pass-through */\n#nprogress {\n  pointer
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -8802,7 +8747,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
@@ -9288,7 +9233,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function(window, undefined) {var observable = function(el) {
@@ -9426,12 +9371,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/* NProgress, 
 })(typeof window != 'undefined' ? window : undefined);
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable__ = __webpack_require__(40);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_riot_observable___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_riot_observable__);
 
 
@@ -9783,7 +9728,7 @@ route.parser();
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var RiotControl = {
@@ -9809,13 +9754,13 @@ if (true) module.exports = RiotControl;
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -9840,7 +9785,7 @@ if(false) {
 }
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports) {
 
 
@@ -9935,7 +9880,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports) {
 
 (function(self) {

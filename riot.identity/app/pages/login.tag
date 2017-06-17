@@ -1,10 +1,10 @@
 <login> 
 <h2>Login.</h2>
-<div class="col-md-8">
-    <section if={json}>
+<div if={json} class="col-md-8">
+    <section>
         <h4>Use a local account to log in.</h4>
         <hr />
-        <form id="myForm" data-toggle="validator" role="form">
+        <div id="myForm" data-toggle="validator" role="form">
             <input type="hidden" data-val="true" data-val-required=""                     
                 id="returnUrl" name="ReturnUrl" value="{returnUrl}" />
             <div class="form-group">
@@ -27,57 +27,44 @@
                 </div>
             </div>
             <div class="form-group">
-              <button id="submitButton" type="submit" class="btn btn-primary">Login</button>
+              <button id="submitButton" onclick={onSubmit} type="submit" class="btn btn-primary">Login</button>
             </div>
 
             <p each={items} >
                 <a onclick={parent.route} item={this}>{this.title}</a>
             </p>
-     	</form>
+        </div>
     </section>
 </div>
-<div class="col-md-4">
+<div if={json} class="col-md-4">
     <section>
         <h4>Use another service to log in.</h4>
         <hr />
-        <table class="table">
-          <tbody>
-            <tr each={login in logins.loginProviders}>
-              <td>{login.displayName}</td>
-              <td>
-                <div>
-                  <form method="post" class="form-horizontal" action="/Account/RiotExternalLogin">
-                    <button type="submit" 
-                            class="btn btn-default" 
-                            name="provider"
-                            value="{login.authenticationScheme}"   
-                            title="Log in using your {login.authenticationScheme} account">{login.displayName}</button>
-                  
-                      <input name="__RequestVerificationToken" type="hidden" value="{parent.antiForgeryToken}" />
-                  </form>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-      </table>
+        <div each={login in json.loginProviders}>
+            <button  class="btn btn-default" 
+                            onclick="{parent.onExternalLogin}"
+                            title="Log in using your {login.displayName} account">{login.displayName}</button>
+        </div>
     </section>
 </div>
 
 <script>
-	var self = this;
-    self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+    var self = this;
     self.mixin("forms-mixin");
-	self.name = 'home';
+    self.mixin('riotcontrol-bind-mixin');
+
+    self.name = 'home';
     self.rememberMe = false;
     self.json = undefined;
-    self.returnUrl = 
     self.items =  [
           { title: 'Register as a new user?', route: '/account/register'},
           { title: 'Forgot your password?', route: '/account/forgot'}
       ];
- 
+
     self.submitTrigger = riot.EVT.accountStore.in.login;
     self.onSubmit = (e) =>{
+     
+
         let myForm = $('#myForm');
         let data = self.toJSONString(myForm[0]);
 
@@ -108,11 +95,9 @@
        riot.state.returnUrl = decodeURIComponent(riot.state.returnUrl);
     })
 
-	self.on('mount', function() {
-        riot.control.on(riot.EVT.accountStore.out.loginComplete,
-            self._onLoginComplete);
-        riot.control.on(riot.EVT.accountStore.out.loginInfoComplete,
-            self._onLoginInfoComplete);
+    self.on('mount', function() {
+        self.riotHandlers.forEach(self.bindHandler);
+         
         let myForm = $('#myForm');
         myForm.validator();
         myForm.on('submit', self.onSubmit);
@@ -120,21 +105,16 @@
 
         riot.control.trigger(riot.EVT.accountStore.in.loginInfo);
 
-
     })
 
-	self.on('unmount', function() {
-        riot.control.off(riot.EVT.accountStore.out.loginComplete,
-            self._onLoginComplete);
-        riot.control.off(riot.EVT.accountStore.out.loginInfoComplete,
-            self._onLoginInfoComplete);
+    self.on('unmount', function() {
+        self.riotHandlers.forEach(self.unbindHandler);
     })
 
-    self._onLoginInfoComplete = () => {
+    self._onLoginInfoComplete = () =>{
         self.json = riot.state.loginInfo.json;
         self.update();
     }
-
     self._onLoginComplete = () => {
         if(riot.state.login.status.ok){
             let returnUrl = '/';
@@ -153,9 +133,46 @@
             }
         }
     };
+    self.onExternalLogin = (evt) =>{
+        let returnUrl = riot.state.returnUrl;
+        let item = evt.item;
+        let antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+        let body = {
+          __RequestVerificationToken:antiForgeryToken,
+          returnUrl:returnUrl,
+          provider:item.login.authenticationScheme
+        };
+        self.externalPost('/Account/ExternalLogin',body);
+    }
+    self.externalPost = (path, params, method) => {
+        method = method || "post"; // Set method to post by default if not specified.
 
-	self.generateAnError = () => {
-  		riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
-  	};
+        // The rest of this code assumes you are not using a library.
+        // It can be made less wordy if you use one.
+        var form = document.createElement("form");
+        form.setAttribute("method", method);
+        form.setAttribute("action", path);
+
+        for(var key in params) {
+            if(params.hasOwnProperty(key)) {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
+                hiddenField.setAttribute("name", key);
+                hiddenField.setAttribute("value", params[key]);
+
+                form.appendChild(hiddenField);
+             }
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+    self.generateAnError = () => {
+        riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
+    };
+    self.riotHandlers = [
+        {event:riot.EVT.accountStore.out.loginComplete,handler:self._onLoginComplete},
+        {event:riot.EVT.accountStore.out.loginInfoComplete,handler:self._onLoginInfoComplete},
+    ];
 </script>
 </login>
