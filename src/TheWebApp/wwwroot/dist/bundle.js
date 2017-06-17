@@ -3507,6 +3507,7 @@ Constants.WELLKNOWN_EVENTS = {
     manageAddPhoneResult: Constants.NAMESPACE + 'manage-add-phone-result',
     userManageInfo: Constants.NAMESPACE + 'user-manage-info',
     userManageInfoResult: Constants.NAMESPACE + 'user-manage-info-result',
+    postForm: Constants.NAMESPACE + 'post-form',
     redirect: Constants.NAMESPACE + 'redirect',
     loginInfo: Constants.NAMESPACE + 'login-info',
     loginInfoResult: Constants.NAMESPACE + 'login-info-result',
@@ -3558,81 +3559,46 @@ var AccountStore = function () {
 
     riot.observable(this);
     self._bound = false;
+    self.riotHandlers = [{ event: Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, handler: this._onRemoveExternalLogin }, { event: Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, handler: this._onRemoveExternalLoginResult }, { event: Constants.WELLKNOWN_EVENTS.in.externalLogins, handler: this._onExternalLogins }, { event: Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, handler: this._onExternalLoginsResult }, { event: Constants.WELLKNOWN_EVENTS.in.changePassword, handler: this._onChangePassword }, { event: Constants.WELLKNOWN_EVENTS.in.changePasswordResult, handler: this._onChangePasswordResult }, { event: Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, handler: this._onEnableTwoFactor }, { event: Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, handler: this._onEnableTwoFactorResult }, { event: Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, handler: this._onRemovePhoneNumber }, { event: Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, handler: this._onRemovePhoneNumberResult }, { event: Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, handler: this._onVerifyPhoneNumber }, { event: Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, handler: this._onVerifyPhoneNumberResult }, { event: Constants.WELLKNOWN_EVENTS.in.manageAddPhone, handler: this._onManageAddPhone }, { event: Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, handler: this._onManageAddPhoneResult }, { event: Constants.WELLKNOWN_EVENTS.in.userManageInfo, handler: this._onUserManageInfo }, { event: Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, handler: this._onUserManageInfoResult }, { event: Constants.WELLKNOWN_EVENTS.in.postForm, handler: this._onPostForm }, { event: Constants.WELLKNOWN_EVENTS.in.redirect, handler: this._onRedirect }, { event: Constants.WELLKNOWN_EVENTS.in.loginInfo, handler: this._onLoginInfo }, { event: Constants.WELLKNOWN_EVENTS.in.loginInfoResult, handler: this._onLoginInfoResult }, { event: Constants.WELLKNOWN_EVENTS.in.login, handler: this._onLogin }, { event: Constants.WELLKNOWN_EVENTS.in.loginResult, handler: this._onLoginResult }, { event: Constants.WELLKNOWN_EVENTS.in.forgot, handler: this._onForgot }, { event: Constants.WELLKNOWN_EVENTS.in.forgotResult, handler: this._onForgotResult }, { event: Constants.WELLKNOWN_EVENTS.in.register, handler: this._onRegister }, { event: Constants.WELLKNOWN_EVENTS.in.registerResult, handler: this._onRegisterResult }, { event: Constants.WELLKNOWN_EVENTS.in.reset, handler: this._onReset }, { event: Constants.WELLKNOWN_EVENTS.in.resetResult, handler: this._onResetResult }, { event: Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, handler: this._onSendVerificationCode }, { event: Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, handler: this._onSendVerificationCodeResult }, { event: Constants.WELLKNOWN_EVENTS.in.verifyCode, handler: this._onVerifyCode }, { event: Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, handler: this._onVerifyCodeResult }];
     self.bindEvents();
   }
 
+  AccountStore.prototype.bindHandler = function bindHandler(element, index, array) {
+    this.on(element.event, element.handler);
+  };
+
+  AccountStore.prototype.unbindHandler = function unbindHandler(element, index, array) {
+    this.off(element.event, element.handler);
+  };
+
   AccountStore.prototype.bindEvents = function bindEvents() {
     if (this._bound === false) {
-      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
-      this.on(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
-      this.on(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
-      this.on(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
-      this.on(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
-      this.on(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
-      this.on(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
-      this.on(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
-      this.on(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
-      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
-      this.on(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
-      this.on(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
-      this.on(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
-      this.on(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
-      this.on(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
-      this.on(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
-      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
-      this.on(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
+      this.riotHandlers.forEach(this.bindHandler, this);
       this._bound = !this._bound;
     }
   };
 
   AccountStore.prototype.unbindEvents = function unbindEvents() {
     if (this._bound === true) {
-      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, this._onRemoveExternalLogin);
-      this.off(Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, this._onRemoveExternalLoginResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.externalLogins, this._onExternalLogins);
-      this.off(Constants.WELLKNOWN_EVENTS.in.externalLoginsResult, this._onExternalLoginsResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.changePassword, this._onChangePassword);
-      this.off(Constants.WELLKNOWN_EVENTS.in.changePasswordResult, this._onChangePasswordResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactor, this._onEnableTwoFactor);
-      this.off(Constants.WELLKNOWN_EVENTS.in.enableTwoFactorResult, this._onEnableTwoFactorResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumber, this._onRemovePhoneNumber);
-      this.off(Constants.WELLKNOWN_EVENTS.in.removePhoneNumberResult, this._onRemovePhoneNumberResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumber, this._onVerifyPhoneNumber);
-      this.off(Constants.WELLKNOWN_EVENTS.in.verifyPhoneNumberResult, this._onVerifyPhoneNumberResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhone, this._onManageAddPhone);
-      this.off(Constants.WELLKNOWN_EVENTS.in.manageAddPhoneResult, this._onManageAddPhoneResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfo, this._onUserManageInfo);
-      this.off(Constants.WELLKNOWN_EVENTS.in.userManageInfoResult, this._onUserManageInfoResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.redirect, this._onRedirect);
-      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfo, this._onLoginInfo);
-      this.off(Constants.WELLKNOWN_EVENTS.in.loginInfoResult, this._onLoginInfoResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.login, this._onLogin);
-      this.off(Constants.WELLKNOWN_EVENTS.in.loginResult, this._onLoginResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.forgot, this._onForgot);
-      this.off(Constants.WELLKNOWN_EVENTS.in.forgotResult, this._onForgotResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.register, this._onRegister);
-      this.off(Constants.WELLKNOWN_EVENTS.in.registerResult, this._onRegisterResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.reset, this._onReset);
-      this.off(Constants.WELLKNOWN_EVENTS.in.resetResult, this._onResetResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCode, this._onSendVerificationCode);
-      this.off(Constants.WELLKNOWN_EVENTS.in.sendVerificationCodeResult, this._onSendVerificationCodeResult);
-      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCode, this._onVerifyCode);
-      this.off(Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, this._onVerifyCodeResult);
-      this._bound = !this._bound;
+      this.riotHandlers.forEach(this.unbindHandler, self);
+      this._bound = !self._bound;
     }
+  };
+
+  AccountStore.prototype._onPostForm = function _onPostForm(path, params, method) {
+    var $ = window.$;
+
+    method = method || 'post'; // Set method to post by default, if not specified.
+
+    var form = $(document.createElement('form')).attr({ 'method': method, 'action': path });
+
+    $.each(params, function (key, value) {
+      $.each(value instanceof Array ? value : [value], function (i, val) {
+        $(document.createElement('input')).attr({ 'type': 'hidden', 'name': key, 'value': val }).appendTo(form);
+      });
+    });
+
+    form.appendTo(document.body).submit();
   };
 
   AccountStore.prototype._onRedirect = function _onRedirect(url) {
@@ -7975,6 +7941,7 @@ riot.tag2('login', '<h2>Login.</h2> <div if="{json}" class="col-md-8"> <section>
             }
         }
     };
+
     self.onExternalLogin = function (evt) {
         var returnUrl = riot.state.returnUrl;
         var item = evt.item;
@@ -7984,30 +7951,9 @@ riot.tag2('login', '<h2>Login.</h2> <div if="{json}" class="col-md-8"> <section>
             returnUrl: returnUrl,
             provider: item.login.authenticationScheme
         };
-        self.externalPost('/Account/ExternalLogin', body);
+        riot.control.trigger(riot.EVT.accountStore.in.postForm, '/Account/ExternalLogin', body);
     };
-    self.externalPost = function (path, params, method) {
-        method = method || "post";
 
-        var form = document.createElement("form");
-
-        form._submit_function_ = form.submit;
-
-        form.setAttribute("method", method);
-        form.setAttribute("action", path);
-
-        for (var key in params) {
-            var hiddenField = document.createElement("input");
-            hiddenField.setAttribute("type", "hidden");
-            hiddenField.setAttribute("name", key);
-            hiddenField.setAttribute("value", params[key]);
-
-            form.appendChild(hiddenField);
-        }
-
-        document.body.appendChild(form);
-        form._submit_function_();
-    };
     self.generateAnError = function () {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
     };

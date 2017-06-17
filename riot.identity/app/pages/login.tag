@@ -133,6 +133,7 @@
             }
         }
     };
+    
     self.onExternalLogin = (evt) =>{
         let returnUrl = riot.state.returnUrl;
         let item = evt.item;
@@ -142,25 +143,9 @@
           returnUrl:returnUrl,
           provider:item.login.authenticationScheme
         };
-        self.externalPost('/Account/ExternalLogin',body);
+        riot.control.trigger(riot.EVT.accountStore.in.postForm,'/Account/ExternalLogin',body);
     }
-    self.externalPost = (path, params, method) => {
-       method = method || "post"; // Set method to post by default, if not specified.
 
-        var form = $(document.createElement( "form" ))
-            .attr( {"method": method, "action": path} );
-
-        $.each( params, function(key,value){
-            $.each( value instanceof Array? value : [value], function(i,val){
-                $(document.createElement("input"))
-                    .attr({ "type": "hidden", "name": key, "value": val })
-                    .appendTo( form );
-            }); 
-        } ); 
-
-        form.appendTo( document.body ).submit(); 
-
-    }
     self.generateAnError = () => {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
     };
