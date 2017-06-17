@@ -145,27 +145,21 @@
         self.externalPost('/Account/ExternalLogin',body);
     }
     self.externalPost = (path, params, method) => {
-        method = method || "post"; // Set method to post by default if not specified.
+       method = method || "post"; // Set method to post by default, if not specified.
 
-        // The rest of this code assumes you are not using a library.
-        // It can be made less wordy if you use one.
-        var form = document.createElement("form");
-        form.setAttribute("method", method);
-        form.setAttribute("action", path);
+        var form = $(document.createElement( "form" ))
+            .attr( {"method": method, "action": path} );
 
-        for(var key in params) {
-            if(params.hasOwnProperty(key)) {
-                var hiddenField = document.createElement("input");
-                hiddenField.setAttribute("type", "hidden");
-                hiddenField.setAttribute("name", key);
-                hiddenField.setAttribute("value", params[key]);
+        $.each( params, function(key,value){
+            $.each( value instanceof Array? value : [value], function(i,val){
+                $(document.createElement("input"))
+                    .attr({ "type": "hidden", "name": key, "value": val })
+                    .appendTo( form );
+            }); 
+        } ); 
 
-                form.appendChild(hiddenField);
-             }
-        }
+        form.appendTo( document.body ).submit(); 
 
-        document.body.appendChild(form);
-        form.submit();
     }
     self.generateAnError = () => {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});

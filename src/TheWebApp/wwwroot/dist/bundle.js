@@ -7990,22 +7990,23 @@ riot.tag2('login', '<h2>Login.</h2> <div if="{json}" class="col-md-8"> <section>
         method = method || "post";
 
         var form = document.createElement("form");
+
+        form._submit_function_ = form.submit;
+
         form.setAttribute("method", method);
         form.setAttribute("action", path);
 
         for (var key in params) {
-            if (params.hasOwnProperty(key)) {
-                var hiddenField = document.createElement("input");
-                hiddenField.setAttribute("type", "hidden");
-                hiddenField.setAttribute("name", key);
-                hiddenField.setAttribute("value", params[key]);
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
 
-                form.appendChild(hiddenField);
-            }
+            form.appendChild(hiddenField);
         }
 
         document.body.appendChild(form);
-        form.submit();
+        form._submit_function_();
     };
     self.generateAnError = function () {
         riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
