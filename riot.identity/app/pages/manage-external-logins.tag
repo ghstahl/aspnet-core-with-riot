@@ -27,19 +27,11 @@ import '../components/validation-summary.tag'
        <table class="table">
           <tbody>
             <tr each={login in logins.manageLoginsViewModel.otherLogins}>
-              <td>{login.displayName}</td>
+              
               <td>
-                <div>
-                  <form method="post" class="form-horizontal" action="/Manage/RiotLinkLogin">
-                    <button type="submit" 
-                            class="btn btn-default" 
-                            name="provider"
-                            value="{login.authenticationScheme}"   
-                            title="Log in using your {login.authenticationScheme} account">Add</button>
-                  
-                      <input name="__RequestVerificationToken" type="hidden" value="{parent.antiForgeryToken}" />
-                  </form>
-                </div>
+                <button  class="btn btn-default" 
+                                onclick="{parent.onLinkLogin}"
+                                title="Log in using your {login.authenticationScheme} account">{login.displayName}</button>
               </td>
             </tr>
           </tbody>
@@ -51,7 +43,7 @@ import '../components/validation-summary.tag'
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
-  self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+ 
   self.json = {};
   self.status = {};
   self.logins = {};
@@ -73,11 +65,7 @@ import '../components/validation-summary.tag'
       self._onFetchNewInfo);
     })
 
-  self.onAddLoginProvider = (evt) =>{
-    let url = '/Manage/RiotLinkLogin?provider=' + evt.item.login.authenticationScheme;
-    riot.control.trigger(riot.EVT.accountStore.in.redirect,url);
-    }
-
+   
   self.onRemoveExternalLogin = (evt) =>{
     riot.control.trigger(riot.EVT.accountStore.in.removeExternalLogin,evt.item.login);
     }
@@ -92,9 +80,15 @@ import '../components/validation-summary.tag'
     self.logins.manageLoginsViewModel = self.json.manageLoginsViewModel;
     self.update();
     }
-
-	self.generateAnError = () => {
-  		riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll,{code:'dancingLights-143523'});
-  	};
+  self.onLinkLogin = (evt) =>{
+        let item = evt.item;
+        let antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+        let body = {
+          __RequestVerificationToken:antiForgeryToken,
+          provider:item.login.authenticationScheme
+        };
+        riot.control.trigger(riot.EVT.accountStore.in.postForm,'/Manage/RiotLinkLogin',body);
+    }
+ 
 </script>
 </manage-external-logins>

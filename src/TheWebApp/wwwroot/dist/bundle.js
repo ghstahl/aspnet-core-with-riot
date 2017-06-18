@@ -8032,11 +8032,11 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveExternalLogin}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td>{login.displayName}</td> <td> <div> <form method="post" class="form-horizontal" action="/Manage/RiotLinkLogin"> <button type="submit" class="btn btn-default" name="provider" riot-value="{login.authenticationScheme}" title="Log in using your {login.authenticationScheme} account">Add</button> <input name="__RequestVerificationToken" type="hidden" riot-value="{parent.antiForgeryToken}"> </form> </div> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
+riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveExternalLogin}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td> <button class="btn btn-default" onclick="{parent.onLinkLogin}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
-  self.antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+
   self.json = {};
   self.status = {};
   self.logins = {};
@@ -8053,11 +8053,6 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
     riot.control.off(riot.EVT.accountStore.out.removeExternalLoginComplete, self._onFetchNewInfo);
   });
 
-  self.onAddLoginProvider = function (evt) {
-    var url = '/Manage/RiotLinkLogin?provider=' + evt.item.login.authenticationScheme;
-    riot.control.trigger(riot.EVT.accountStore.in.redirect, url);
-  };
-
   self.onRemoveExternalLogin = function (evt) {
     riot.control.trigger(riot.EVT.accountStore.in.removeExternalLogin, evt.item.login);
   };
@@ -8072,9 +8067,14 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
     self.logins.manageLoginsViewModel = self.json.manageLoginsViewModel;
     self.update();
   };
-
-  self.generateAnError = function () {
-    riot.control.trigger(riot.EVT.errorStore.in.errorCatchAll, { code: 'dancingLights-143523' });
+  self.onLinkLogin = function (evt) {
+    var item = evt.item;
+    var antiForgeryToken = riot.Cookies.get('XSRF-TOKEN');
+    var body = {
+      __RequestVerificationToken: antiForgeryToken,
+      provider: item.login.authenticationScheme
+    };
+    riot.control.trigger(riot.EVT.accountStore.in.postForm, '/Manage/RiotLinkLogin', body);
   };
 });
 
