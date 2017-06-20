@@ -3,7 +3,7 @@ import './css/index.css';
 import './components/my-next-startup.tag';
 import './app.tag';
 import 'bootstrap-validator';
-import P7HostCore from 'p7-riotjs-host/lib/P7HostCore.js';
+import {P7HostCore} from 'p7-riotjs-host/lib/P7HostCore.js';
 
 let p7HostCore = new P7HostCore(riot);
 
@@ -52,6 +52,7 @@ riot.EVT.accountStore = AccountStore.constants.WELLKNOWN_EVENTS;
 let accountStore = new AccountStore();
 
 import SidebarStore from './stores/sidebar-store.js';
+riot.EVT.sidebarStore = SidebarStore.constants.WELLKNOWN_EVENTS;
 let sidebarStore = new SidebarStore();
 
 riot.control.addStore(nextConfigStore);

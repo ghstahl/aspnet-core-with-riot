@@ -1,4 +1,4 @@
-import DeepFreeze from '../p7-host-core/utils/deep-freeze.js';
+import {DeepFreeze, StoreBase} from 'p7-riotjs-host/lib/P7HostCore.js';
 
 class Constants {}
 Constants.NAME = 'account-store';
@@ -58,16 +58,15 @@ Constants.WELLKNOWN_EVENTS = {
 };
 DeepFreeze.freeze(Constants);
 
-export default class AccountStore {
+export default class AccountStore extends StoreBase {
   static get constants() {
     return Constants;
   }
   constructor() {
-    var self = this;
-
+    super();
     riot.observable(this);
-    self._bound = false;
-    self.riotHandlers = [
+    this._bound = false;
+    this.riotHandlers = [
       {event: Constants.WELLKNOWN_EVENTS.in.removeExternalLogin, handler: this._onRemoveExternalLogin},
       {event: Constants.WELLKNOWN_EVENTS.in.removeExternalLoginResult, handler: this._onRemoveExternalLoginResult},
       {event: Constants.WELLKNOWN_EVENTS.in.externalLogins, handler: this._onExternalLogins},
@@ -101,25 +100,7 @@ export default class AccountStore {
       {event: Constants.WELLKNOWN_EVENTS.in.verifyCode, handler: this._onVerifyCode},
       {event: Constants.WELLKNOWN_EVENTS.in.verifyCodeResult, handler: this._onVerifyCodeResult}
     ];
-    self.bindEvents();
-  }
-  bindHandler(element, index, array) {
-    this.on(element.event, element.handler);
-  }
-  unbindHandler(element, index, array) {
-    this.off(element.event, element.handler);
-  }
-  bindEvents() {
-    if (this._bound === false) {
-      this.riotHandlers.forEach(this.bindHandler, this);
-      this._bound = !this._bound;
-    }
-  }
-  unbindEvents() {
-    if (this._bound === true) {
-      this.riotHandlers.forEach(this.unbindHandler, self);
-      this._bound = !self._bound;
-    }
+    this.bindEvents();
   }
 
   _onPostForm(path, params, method) {
