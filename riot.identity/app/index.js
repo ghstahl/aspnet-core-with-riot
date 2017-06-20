@@ -30,6 +30,7 @@ riot.state.changePassword = {};
 riot.state.manageLogins = {};
 riot.state.removeExternalLogin = {};
 riot.state.logininfo = {};
+riot.state.manageExternalLogins = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////

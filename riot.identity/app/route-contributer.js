@@ -84,6 +84,12 @@ export default class RouteContributer {
       riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
     });
 
+    r('/account/manage-external-logins..', function () {
+      let view = 'manage-external-logins';
+
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+
     r('/account/*', (name)=>{
       console.log('route handler of /account/' + name);
       let view = name;

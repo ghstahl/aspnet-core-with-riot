@@ -2,7 +2,9 @@ import '../components/validation-summary.tag'
 <manage-external-logins>
 <h2>Manage your external logins.</h2>
 
+
 <div if={logins.manageLoginsViewModel}>
+    <validation-summary status={ status }></validation-summary>
     <div if={logins.manageLoginsViewModel.currentLogins.length > 0}>
       <h4>Registered Logins</h4>
     
@@ -50,6 +52,14 @@ import '../components/validation-summary.tag'
 
   
   self.on('mount', function() {
+
+    let q = riot.route.query();
+    let errors = q.errors;
+    
+    if (errors) {
+      self.status.errors = window.$.parseJSON(errors);
+    }
+
 		riot.control.on(riot.EVT.accountStore.out.externalLoginsComplete,
 			self._onExternalLoginsComplete);
     riot.control.on(riot.EVT.accountStore.out.removeExternalLoginComplete,

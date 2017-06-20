@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using TheWebApp.Models;
 using TheWebApp.Models.ManageViewModels;
 using TheWebApp.Services;
@@ -275,6 +276,17 @@ namespace TheWebApp.Controllers
                 message = ManageMessageId.AddLoginSuccess;
                 // Clear the existing external cookie to ensure a clean login process
                 await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
+            }
+            else
+            {
+                var errors = new List<string>();
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.Code);
+                }
+                var json = JsonConvert.SerializeObject(errors);
+
+                return new RedirectResult("/RiotAccount#account/manage-external-logins?errors="+json);
             }
             return new RedirectResult("/RiotAccount#account/manage-external-logins");
         }

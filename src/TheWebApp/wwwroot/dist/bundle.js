@@ -7577,6 +7577,7 @@ riot.state.changePassword = {};
 riot.state.manageLogins = {};
 riot.state.removeExternalLogin = {};
 riot.state.logininfo = {};
+riot.state.manageExternalLogins = {};
 
 // Add the mixings
 // //////////////////////////////////////////////////////
@@ -7716,6 +7717,12 @@ var RouteContributer = function () {
 
       riot.state.resetPassword.userid = userid;
       riot.state.resetPassword.code = code;
+      riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
+    });
+
+    r('/account/manage-external-logins..', function () {
+      var view = 'manage-external-logins';
+
       riot.control.trigger(riot.EVT.routeStore.in.riotRouteLoadView, view);
     });
 
@@ -8175,7 +8182,7 @@ __webpack_require__(1);
 
 var riot = __webpack_require__(0);
 
-riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveExternalLogin}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td> <button class="btn btn-default" onclick="{parent.onLinkLogin}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
+riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div if="{logins.manageLoginsViewModel}"> <validation-summary status="{status}"></validation-summary> <div if="{logins.manageLoginsViewModel.currentLogins.length > 0}"> <h4>Registered Logins</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.currentLogins}"> <td>{login.loginProvider}</td> <td> <div> <a onclick="{onRemoveExternalLogin}" class="btn btn-default" title="Remove this {login.loginProvider} login from your account">Remove</a> </div> </td> </tr> </tbody> </table> </div> <div if="{logins.manageLoginsViewModel.otherLogins.length > 0}"> <h4>Add another service to log in.</h4> <table class="table"> <tbody> <tr each="{login in logins.manageLoginsViewModel.otherLogins}"> <td> <button class="btn btn-default" onclick="{parent.onLinkLogin}" title="Log in using your {login.authenticationScheme} account">{login.displayName}</button> </td> </tr> </tbody> </table> </div> </div>', '', '', function (opts) {
   var self = this;
   self.mixin("forms-mixin");
   self.name = 'manage';
@@ -8185,6 +8192,14 @@ riot.tag2('manage-external-logins', '<h2>Manage your external logins.</h2> <div 
   self.logins = {};
 
   self.on('mount', function () {
+
+    var q = riot.route.query();
+    var errors = q.errors;
+
+    if (errors) {
+      self.status.errors = window.$.parseJSON(errors);
+    }
+
     riot.control.on(riot.EVT.accountStore.out.externalLoginsComplete, self._onExternalLoginsComplete);
     riot.control.on(riot.EVT.accountStore.out.removeExternalLoginComplete, self._onFetchNewInfo);
 
