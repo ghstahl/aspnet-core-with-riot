@@ -55,3 +55,7 @@ Install it and have it run at startup.  Configure the listening port to be: **32
         }
     }
 ```
+
+## Building the riot app
+Open a command window and navigate to [riotapp](./riot.identity)
+
