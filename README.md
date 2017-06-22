@@ -57,5 +57,15 @@ Install it and have it run at startup.  Configure the listening port to be: **32
 ```
 
 ## Building the riot app
-Open a command window and navigate to [riotapp](./riot.identity)
+Open a command window and navigate to [riot.identity](./riot.identity).
+```
+npm install
+npm run dev
+
+At the moment you need to run;
+npm run dev
+each time if you make changes.  I need to fix this.
+
+```
+Your asp.net app is what serves this app, and it doesn't need to stop if you update your riot.identity app.  You just need to refresh the browser.
 
